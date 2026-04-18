@@ -2504,6 +2504,9 @@ let currentWorldCategory = 'world'; // 当前选中的分类
       const total = transactionHistory.reduce((sum, t) => sum + t.amount, 0);
       return parseFloat(total.toFixed(2)); // 保证两位小数精度
     }
+    // --- 关键修复：补全缺失的全局变量声明 ---
+    let userAssets = 2000.00; // 初始化总资产
+    let momentsData = [];     // 初始化朋友圈全局引用
     let transactionHistory = [
       { id: 't1', type: 'system', name: '账户激活奖励', amount: 0.01, time: '2026-04-16 09:00', icon: 'gift' },
       { id: 't2', type: 'system', name: '初始资产发放', amount: 2000.00, time: '2026-04-16 09:01', icon: 'banknote' }
@@ -3102,31 +3105,32 @@ let currentWorldCategory = 'world'; // 当前选中的分类
     }
 
     function getCurrentSaveData() {
-  return {
-    lastSaveTime: new Date().getTime(),
-    masks, chars, npcs, accountData, offlineScenes, sceneHistories, currentOfflineSceneId, isSceneAnchored, currentEncounterNpcs,
-    mapData, userLocation,
-    momentsCoverImg: document.getElementById('moments-cover-img').src,
-    playlist, currentTrackIndex, userPlaylists,
-    apiPresets,
-    minimaxSettings,
-    currentPresetId,
-    worldBook, // <--- 新增这一行
-    userAssets, transactionHistory,
-    gameSettings, 
-    writingStyles,
-    currentWritingStyleId,
-    gamePlayerId, gameFriends, gameConversations, gameTeamHistory, gameTeam, gameTeamConv,
-    cityWeatherMap,
-    apiSettings: {
-      url: document.getElementById('api-url').value,
-      key: document.getElementById('api-key').value,
-      model: document.getElementById('api-model').value,
-      temp: document.getElementById('api-temp').value,
-      memoryRounds: document.getElementById('input-memory-rounds').value
+        // 安全读取界面的辅助函数
+        const getVal = (id) => {
+            const el = document.getElementById(id);
+            return el ? el.value : "";
+        };
+
+        return {
+            lastSaveTime: new Date().getTime(),
+            masks, chars, npcs, accountData, offlineScenes, sceneHistories, 
+            currentOfflineSceneId, isSceneAnchored, currentEncounterNpcs,
+            mapData, userLocation,
+            momentsCoverImg: document.getElementById('moments-cover-img') ? document.getElementById('moments-cover-img').src : "",
+            playlist, currentTrackIndex, userPlaylists,
+            apiPresets, minimaxSettings, currentPresetId, worldBook,
+            userAssets, transactionHistory, gameSettings, 
+            writingStyles, currentWritingStyleId, cityWeatherMap,
+            gamePlayerId, gameFriends, gameConversations, gameTeamHistory, gameTeam, gameTeamConv,
+            apiSettings: {
+                url: getVal('api-url'),
+                key: getVal('api-key'),
+                model: getVal('api-model'),
+                temp: getVal('api-temp'),
+                memoryRounds: getVal('input-memory-rounds')
+            }
+        };
     }
-  };
-}
 
     function generateRandomWechatId() {
       // 检查ID是否已存在的辅助函数
@@ -4084,6 +4088,7 @@ let currentWorldCategory = 'world'; // 当前选中的分类
           const archive = await getArchive(id);
           archive.time = new Date().toLocaleString('zh-CN');
           archive.data = getCurrentSaveData();
+          if (!archive.data) { alert("数据提取失败，无法存档！"); return; }
           await saveArchive(archive);
           alert('存档已覆盖！');
           renderArchiveList();
@@ -9650,42 +9655,43 @@ async function triggerNpcInteractions(newMoment) {
         
         // 从所有账号（面具）的联系人和聊天记录中抹除
         for (let mId in accountData) {
-            accountData[mId].contacts = accountData[mId].contacts.filter(c => c.id !== id);
-            accountData[mId].conversations = accountData[mId].conversations.filter(c => c.id !== id);
-            // 如果在群聊里，也踢出去
-            accountData[mId].conversations.forEach(conv => {
-                if (conv.isGroup && conv.members) {
-                    conv.members = conv.members.filter(mid => mid !== id);
-                }
-            });
-        }
-        
-        // 删除该角色发的朋友圈、评论和点赞
-        momentsData = momentsData.filter(m => m.authorId !== id);
-        momentsData.forEach(m => {
-            m.comments = m.comments.filter(c => c.authorId !== id);
-            m.likes = m.likes.filter(lid => lid !== id);
-        });
-        
-        // 删除游戏好友
-        if (typeof gameFriends !== 'undefined') {
-            gameFriends = gameFriends.filter(f => f.soul && f.soul.id !== id);
+            if (accountData[mId].contacts) {
+                accountData[mId].contacts = accountData[mId].contacts.filter(c => c.id !== id);
+            }
+            if (accountData[mId].conversations) {
+                accountData[mId].conversations = accountData[mId].conversations.filter(c => c.id !== id);
+                // 如果在群聊里，也踢出去
+                accountData[mId].conversations.forEach(conv => {
+                    if (conv.isGroup && conv.members) {
+                        conv.members = conv.members.filter(mid => mid !== id);
+                    }
+                });
+            }
+            // 修复：同时清理账号里的朋友圈副本数据
+            if (accountData[mId].momentsData) {
+                accountData[mId].momentsData = accountData[mId].momentsData.filter(m => m.authorId !== id);
+            }
         }
         
         // 清理世界书关联
         for (let cat in worldBook) {
             worldBook[cat] = worldBook[cat].filter(entry => {
-                if (entry.contactIds) {
-                    entry.contactIds = entry.contactIds.filter(cid => cid !== id);
-                    return entry.contactIds.length > 0 || cat !== 'character';
-                }
-                return entry.contactId !== id;
+                const ids = entry.contactIds || (entry.contactId ? [entry.contactId] : []);
+                const newIds = ids.filter(cid => cid !== id);
+                if (entry.contactIds) entry.contactIds = newIds;
+                if (entry.contactId) entry.contactId = newIds[0] || null;
+                return cat !== 'character' || newIds.length > 0;
             });
         }
         
         // 清理线下场景对话
         for (let sId in sceneHistories) {
             sceneHistories[sId] = sceneHistories[sId].filter(m => m.senderId !== id && m.name !== id);
+        }
+        
+        // 删除之后立即自动存档一次
+        if (db && !isResetting) {
+            saveArchive({ id: 'auto-save', name: '自动存档', time: new Date().toLocaleString('zh-CN'), data: getCurrentSaveData() });
         }
     }
 
