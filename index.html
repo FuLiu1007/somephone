@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="https://i.postimg.cc/https://www.image2url.com/r2/default/images/1776520238525-a6977edf-f0d7-4136-b79e-f7c673e94dab.png.png">
+<link rel="apple-touch-icon" href="https://www.image2url.com/r2/default/images/1776520238525-a6977edf-f0d7-4136-b79e-f7c673e94dab.png">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <meta charset="UTF-8">
@@ -22,6 +22,7 @@
     }
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   
   <style>
     * { touch-action: manipulation; } /* 禁用双击放大，但保留正常滑动和点击 */
@@ -84,6 +85,37 @@
     .grid-2 { grid-template-columns: 1fr 1fr; }
     .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
     .grid-5, .grid-6, .grid-7, .grid-8, .grid-9 { grid-template-columns: 1fr 1fr 1fr; }
+    /* --- 极简桌面拍立得轮播组件专用 --- */
+    .widget-polaroid-container { position: relative; width: 100%; border-radius: 2px; cursor: pointer; user-select: none; }
+    .widget-polaroid-back {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #e5e7eb;
+      border-radius: 2px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      transform: translate(16px, 22px) rotate(8deg); /* 增大偏移和旋转，露出更多边缘 */
+      z-index: 1;
+    }
+    .widget-polaroid-front {
+      position: relative;
+      background: #fdfdfd;
+      padding: 10px 10px 30px 10px;
+      border-radius: 2px;
+      box-shadow: -2px 4px 15px rgba(0,0,0,0.4);
+      z-index: 2;
+    }
+    .widget-polaroid-img-box {
+      width: 100%; aspect-ratio: 1 / 1;
+      background-color: #d1d5db; /* 初始灰白色 */
+      overflow: hidden;
+      border-radius: 2px;
+    }
+    .widget-typewriter-text {
+      font-family: 'Courier Prime', Courier, monospace; /* 这里调用了打字机字体 */
+      color: #374151; font-size: 13px; font-weight: bold;
+      margin-top: 14px; text-align: center;
+      width: 100%; word-wrap: break-word; line-height: 1.2;
+    }
     /* --- 新增：拍立得照片风格 --- */
     .polaroid-card {
       background: #fdfdfd;
@@ -310,6 +342,25 @@
       content: ''; position: absolute; inset: 0;
       background-image: repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(0,0,0,0.1) 5px);
     }
+    /* --- 独立表情包无底色样式 --- */
+    .msg-sticker { 
+      background: transparent !important; /* 干掉气泡底色 */
+      border: none !important;            /* 干掉边框 */
+      padding: 0 !important;              /* 干掉内边距 */
+      max-width: 140px;                   /* 控制表情包不要太大变巨无霸 */
+    }
+    .msg-sticker::before {                /* 干掉气泡的小尖角 */
+      display: none !important;
+    }
+    .msg-sticker img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;                 /* 图片稍微圆角会好看 */
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+      cursor: pointer;
+    }
+  </style>
+  <style id="custom-bubble-style"></style>
   </style>
 </head>
 <body class="relative h-screen w-full bg-[#0f172a] overflow-hidden font-sans select-none m-0 p-0 text-white" style="overscroll-behavior: none;">
@@ -318,7 +369,7 @@
 
   <!-- 背景图 -->
   <div class="absolute inset-0 z-0">
-    <img src="https://iili.io/BoXEHcx.jpg" alt="Wallpaper" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+    <img id="main-wallpaper-img" src="https://iili.io/BoXEHcx.jpg" alt="Wallpaper" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
     <div class="absolute inset-0 bg-black/30"></div>
   </div>
 
@@ -485,11 +536,36 @@
         <!-- 软件网格 -->
         <div class="grid grid-cols-4 gap-y-6 gap-x-4 px-2">
           <!-- Bank 软件 -->
-          <div id="btn-open-bank" class="app-icon flex flex-col items-center gap-1.5">
-            <div class="w-14 h-14 bg-gradient-to-br from-gray-800 to-black rounded-2xl flex items-center justify-center shadow-lg border border-white/10">
-              <i data-lucide="landmark" class="w-8 h-8 text-yellow-500/80"></i>
+          <div class="col-span-1 self-start flex justify-center">
+            <div id="btn-open-bank" class="app-icon flex flex-col items-center gap-1.5 cursor-pointer">
+              <div class="w-14 h-14 bg-gradient-to-br from-gray-800 to-black rounded-2xl flex items-center justify-center shadow-lg border border-white/10">
+                <i data-lucide="landmark" class="w-8 h-8 text-yellow-500/80"></i>
+              </div>
+              <span class="text-[10px] font-medium">Bank</span>
             </div>
-            <span class="text-[10px] font-medium">Bank</span>
+          </div>
+          
+          <!-- 预留的软件槽位（占1格，保持前面的 Bank 不动） -->
+          <div class="col-span-1"></div>
+
+          <!-- 新增：拍立得组件 -->
+          <!-- 修改点：添加 pr-6 预留右侧安全防切掉内边距，同时移除原先强制偏左的 ml-4 -->
+          <div class="col-span-2 pr-6">
+            <div id="widget-polaroid" class="widget-polaroid-container w-full active:scale-[0.98] transition-transform">
+              <!-- 底层照片 (露出边缘) -->
+              <div class="widget-polaroid-back">
+                <div class="w-full aspect-square bg-[#d1d5db] mx-auto mt-[10px]" style="width: calc(100% - 20px);">
+                  <img id="polaroid-bg-img" src="" class="w-full h-full object-cover hidden" />
+                </div>
+              </div>
+              <!-- 顶层照片 -->
+              <div class="widget-polaroid-front">
+                <div class="widget-polaroid-img-box">
+                  <img id="polaroid-fg-img" src="" class="w-full h-full object-cover hidden" />
+                </div>
+                <div id="polaroid-caption-display" class="widget-typewriter-text">He died, and she knew.</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -520,6 +596,58 @@
       </div>
     </div>
   </div>
+  <!-- Darkroom 美化修改软件 -->
+  <div id="darkroom-view" class="absolute inset-0 z-[100] bg-[#1a1a1a] flex flex-col hidden overflow-hidden">
+    <div class="pt-12 px-6 pb-4 flex items-center justify-between border-b border-white/5 bg-black/20">
+      <button id="btn-close-darkroom" class="p-2 app-icon rounded-full bg-white/5 border border-white/20"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+      <h1 class="font-bold text-lg tracking-[0.4em] uppercase text-white/80">Darkroom</h1>
+      <div class="w-10"></div>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-8 pb-32">
+      <!-- 壁纸修改 -->
+      <section class="bg-white/5 p-4 rounded-[2rem] border border-white/10">
+        <h2 class="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><i data-lucide="image" class="w-3 h-3"></i> Wallpaper / 桌面壁纸</h2>
+        <div class="flex items-center justify-between">
+           <span class="text-xs text-white/60">更换系统主壁纸</span>
+           <button onclick="triggerDarkroomUpload('wallpaper')" class="px-5 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-bold transition-all">上传图片</button>
+        </div>
+      </section>
+
+      <!-- 气泡 CSS 修改 -->
+      <section class="bg-white/5 p-4 rounded-[2rem] border border-white/10">
+        <h2 class="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><i data-lucide="code" class="w-3 h-3"></i> Bubble CSS / 气泡样式代码</h2>
+        <textarea id="input-bubble-css" class="w-full h-32 bg-black/40 rounded-2xl p-4 text-[11px] font-mono text-blue-400 outline-none resize-none border border-white/5" placeholder="/* 在此输入 CSS 代码自定义气泡样式... */"></textarea>
+        <p class="text-[9px] opacity-20 mt-2 text-center">修改 .msg-bubble 类的属性以美化聊天气泡</p>
+      </section>
+
+      <!-- 聊天背景修改 -->
+      <section class="bg-white/5 p-4 rounded-[2rem] border border-white/10">
+        <h2 class="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><i data-lucide="layout" class="w-3 h-3"></i> Chat Background / 聊天背景</h2>
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+             <span class="text-xs text-white/60">全局聊天背景图</span>
+             <button onclick="triggerDarkroomUpload('chatGlobal')" class="px-5 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-bold">上传</button>
+          </div>
+          <div class="h-px bg-white/5"></div>
+          <div class="flex flex-col gap-3">
+             <div class="flex items-center justify-between">
+                <span class="text-xs text-white/60">特定联系人背景</span>
+                <button onclick="pickContactForDarkroom()" class="px-5 py-2 bg-blue-600 rounded-xl text-[10px] font-bold shadow-lg shadow-blue-600/20">选择联系人</button>
+             </div>
+             <div id="dr-contact-area" class="hidden flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
+                <span id="dr-selected-name" class="text-[10px] text-blue-400 font-bold">已选: ---</span>
+                <button onclick="triggerDarkroomUpload('chatContact')" class="px-4 py-1.5 bg-purple-600 rounded-lg text-[10px] font-bold">上传专属背景</button>
+             </div>
+          </div>
+        </div>
+      </section>
+      
+      <button id="btn-save-darkroom" class="w-full py-5 bg-white text-black font-black uppercase tracking-[0.4em] rounded-[2rem] shadow-2xl active:scale-95 transition-all mt-4">Save Changes / 保存美化</button>
+    </div>
+    <!-- 隐藏的统一上传按钮 -->
+    <input type="file" id="darkroom-file-input" class="hidden" accept="image/*" />
+  </div>
 
   <!-- Settings 界面 -->
   <div id="settings-view" class="absolute inset-0 z-20 glass flex flex-col hidden">
@@ -543,6 +671,38 @@
       <button id="btn-open-minimax-settings" class="w-full p-5 rounded-2xl bg-white/10 border border-white/10 flex items-center gap-4 app-icon text-left">
         <i data-lucide="mic" class="w-6 h-6 opacity-80"></i><span class="font-medium">Minimax设置</span>
       </button>
+    </div>
+  </div>
+  <!-- 拍立得设置弹窗 -->
+  <div id="polaroid-settings-modal" class="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center px-6 hidden">
+    <div class="bg-white/10 border border-white/20 rounded-[2.5rem] p-6 w-full max-w-sm flex flex-col anim-scale-in shadow-2xl">
+      <h2 class="text-center font-bold mb-4 tracking-widest text-lg text-white">拍立得设置</h2>
+      
+      <div class="mb-4">
+        <label class="text-xs opacity-70 ml-1 mb-2 block text-white">照片轮播间隔 (秒)</label>
+        <input type="number" id="input-polaroid-interval" min="1" value="5" class="w-full bg-black/40 rounded-xl px-4 py-3 text-sm outline-none border border-white/10 text-white font-bold" />
+      </div>
+
+      <div class="mb-4">
+        <label class="text-xs opacity-70 ml-1 mb-2 block text-white">底部文案 (打字机字体)</label>
+        <textarea id="input-polaroid-caption" class="w-full h-20 bg-black/40 rounded-xl p-3 text-sm outline-none border border-white/10 resize-none text-white font-serif" placeholder="He died, and she knew."></textarea>
+      </div>
+
+      <div class="mb-6 border-t border-white/10 pt-4 mt-2">
+        <div class="flex justify-between items-center mb-2 ml-1">
+          <label class="text-xs opacity-70 block text-white">照片序列</label>
+          <button id="btn-polaroid-upload" class="text-xs bg-blue-500/20 text-blue-400 font-bold px-3 py-1.5 rounded-lg hover:bg-blue-500/30 transition-colors"><i data-lucide="upload" class="inline w-3 h-3 mr-1 -mt-0.5"></i>上传新图片</button>
+          <input type="file" id="input-polaroid-file" accept="image/*" class="hidden" multiple />
+        </div>
+        <div id="polaroid-photo-list" class="flex gap-2 overflow-x-auto p-3 bg-black/20 rounded-xl border border-white/10 min-h-[85px] items-center">
+          <!-- 缩略图生成处 -->
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="btn-cancel-polaroid" class="flex-1 py-4 rounded-2xl bg-white/5 text-white/50 font-bold">取消</button>
+        <button id="btn-save-polaroid" class="flex-1 py-4 rounded-2xl bg-blue-600 text-white font-bold shadow-lg">保存设置</button>
+      </div>
     </div>
   </div>
 
@@ -782,14 +942,26 @@
         <p class="text-xs opacity-50 mb-1">微信号：<span id="chat-me-wechat-id">未设置</span></p>
         <p id="chat-me-signature" class="text-xs opacity-70 mb-8 text-center px-6 line-clamp-2">暂无签名</p>
         
-        <!-- 下方：账号设置按钮 -->
-        <button id="btn-open-account-settings" class="w-[90%] p-4 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-between app-icon hover:bg-white/20 transition-colors">
-          <div class="flex items-center gap-3">
-            <i data-lucide="settings" class="w-5 h-5 text-blue-400"></i>
-            <span class="font-medium text-sm">账号设置</span>
-          </div>
-          <i data-lucide="chevron-right" class="w-4 h-4 opacity-50"></i>
-        </button>
+        <!-- 下方：功能按钮区 -->
+        <div class="w-[90%] flex flex-col gap-3">
+          <!-- 表情包库按钮 -->
+          <button id="btn-open-sticker-library" class="w-full p-4 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-between app-icon hover:bg-white/20 transition-colors">
+            <div class="flex items-center gap-3">
+              <i data-lucide="smile-plus" class="w-5 h-5 text-yellow-400"></i>
+              <span class="font-medium text-sm">表情包库</span>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 opacity-50"></i>
+          </button>
+
+          <!-- 账号设置按钮 -->
+          <button id="btn-open-account-settings" class="w-full p-4 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-between app-icon hover:bg-white/20 transition-colors">
+            <div class="flex items-center gap-3">
+              <i data-lucide="settings" class="w-5 h-5 text-blue-400"></i>
+              <span class="font-medium text-sm">账号设置</span>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 opacity-50"></i>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -836,7 +1008,7 @@
       <div class="flex items-end gap-2 relative">
         <button id="btn-chat-more" class="p-2 mb-1 opacity-60 hover:opacity-100"><i data-lucide="plus-circle" class="w-7 h-7"></i></button>
         <!-- 聊天输入框加号扩展面板 -->
-        <div id="chat-input-more-menu" class="absolute bottom-14 left-0 w-64 glass rounded-2xl shadow-2xl hidden overflow-hidden z-50 grid grid-cols-4 gap-y-4 gap-x-2 p-4">
+        <div id="chat-input-more-menu" class="absolute bottom-14 left-0 w-64 bg-black/60 backdrop-blur-[100px] border border-white/10 rounded-2xl shadow-2xl hidden overflow-hidden z-50 grid grid-cols-4 gap-y-4 gap-x-2 p-4">
           <button class="flex flex-col items-center gap-1 opacity-70 hover:opacity-100"><div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center"><i data-lucide="rotate-ccw" class="w-5 h-5"></i></div><span class="text-[10px]">重回</span></button>
           <button class="flex flex-col items-center gap-1 opacity-70 hover:opacity-100"><div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center"><i data-lucide="image" class="w-5 h-5"></i></div><span class="text-[10px]">照片</span></button>
           <button class="flex flex-col items-center gap-1 opacity-70 hover:opacity-100"><div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center"><i data-lucide="camera" class="w-5 h-5"></i></div><span class="text-[10px]">拍摄</span></button>
@@ -846,18 +1018,17 @@
           <button class="flex flex-col items-center gap-1 opacity-70 hover:opacity-100"><div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center"><i data-lucide="map-pin" class="w-5 h-5"></i></div><span class="text-[10px]">位置</span></button>
           <button id="btn-chat-transfer" class="flex flex-col items-center gap-1 opacity-70 hover:opacity-100 text-orange-500"><div class="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center"><i data-lucide="banknote" class="w-5 h-5"></i></div><span class="text-[10px]">转账</span></button>
         </div>
-        <!-- 表情包占位弹窗 -->
-        <div id="chat-emoji-menu" class="absolute bottom-14 left-12 w-64 glass rounded-2xl shadow-2xl hidden z-50 p-3 grid grid-cols-5 gap-2">
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">😀</button>
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">😂</button>
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">🥰</button>
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">😭</button>
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">😡</button>
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">👍</button>
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">🙏</button>
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">💔</button>
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">✨</button>
-          <button class="hover:bg-white/20 rounded p-1 text-2xl">🔥</button>
+        <!-- 自定义表情包发送面板 (升级版) -->
+        <div id="chat-emoji-menu" class="absolute bottom-14 left-2 w-[85vw] max-w-[320px] bg-[#1e1e24]/95 backdrop-blur-[100px] border border-white/10 rounded-2xl shadow-2xl hidden z-50 flex flex-col overflow-hidden">
+          <!-- 上方：表情缩略图展示区 -->
+          <div id="chat-emoji-grid" class="h-48 p-3 overflow-y-auto grid grid-cols-4 gap-2 content-start border-b border-white/5">
+             <p class="col-span-4 text-center text-xs opacity-30 py-10" id="chat-emoji-empty-hint">此分组没有表情或暂无可用表情</p>
+             <!-- 真实的图片会在这里按点击分组渲染出来 -->
+          </div>
+          <!-- 下方：横向滚动分组导航区 -->
+          <div id="chat-emoji-groups-scroll" class="flex items-center h-10 px-2 gap-1 overflow-x-auto bg-black/20 no-scrollbar">
+             <!-- 分组小按钮将在这里渲染 -->
+          </div>
         </div>
         <button id="btn-chat-emoji" class="p-2 mb-1 opacity-60 hover:opacity-100"><i data-lucide="smile" class="w-7 h-7"></i></button>
         <textarea id="chat-input" rows="1" class="flex-1 bg-white/10 rounded-2xl p-3 text-sm outline-none resize-none max-h-32" placeholder="发送消息..."></textarea>
@@ -1244,6 +1415,68 @@
       <i data-lucide="trash-2" class="w-4 h-4"></i> 删除
     </button>
   </div>
+  <!-- 表情包库主管理弹窗 -->
+  <div id="sticker-library-modal" class="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center px-4 hidden">
+    <div class="bg-[#1e1e24] border border-white/20 rounded-[2.5rem] p-5 w-full max-w-sm flex flex-col h-[80vh] anim-scale-in shadow-2xl relative">
+      <button id="btn-close-sticker-lib" class="absolute top-4 right-4 p-2 opacity-50 hover:opacity-100 z-10"><i data-lucide="x" class="w-5 h-5 text-white"></i></button>
+      <h2 class="text-center font-bold text-lg mb-4 mt-1 tracking-widest text-white">表情包库</h2>
+      
+      <!-- 分组选择和操作 -->
+      <div class="flex flex-col gap-2 mb-3">
+        <div class="flex gap-2">
+          <select id="select-sticker-group" class="flex-1 bg-black/40 rounded-xl px-3 py-2 text-sm outline-none border border-white/10 appearance-none text-white">
+            <option value="">请先创建分组</option>
+          </select>
+          <button id="btn-new-sticker-group" class="p-2 bg-white/10 rounded-xl border border-white/10 hover:bg-white/20 text-blue-400 transition-colors" title="新建分组">
+            <i data-lucide="folder-plus" class="w-5 h-5"></i>
+          </button>
+          <button id="btn-delete-sticker-group" class="p-2 bg-red-500/20 rounded-xl border border-red-500/30 hover:bg-red-500/30 text-red-400 transition-colors" title="删除分组">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <!-- 专属角色授权 -->
+        <div class="flex items-center justify-between bg-black/20 rounded-xl px-4 py-2 border border-white/5 active:scale-95 cursor-pointer transition-transform" id="btn-set-sticker-auth">
+          <span class="text-[10px] opacity-60 text-white"><i data-lucide="user-check" class="w-3 h-3 inline mr-1 -mt-0.5"></i>此分组专属授权：</span>
+          <span id="sticker-group-auth-role" class="text-[10px] text-yellow-400 font-bold truncate max-w-[100px] border-b border-yellow-400/30">全员可用</span>
+        </div>
+      </div>
+
+      <!-- 表情包九宫格展示区 -->
+      <div id="sticker-grid-container" class="flex-1 overflow-y-auto mb-4 bg-black/20 rounded-xl p-3 border border-white/5 grid grid-cols-4 gap-2 content-start">
+         <p class="col-span-4 text-center text-[10px] opacity-30 py-10 hidden" id="sticker-empty-hint">当前分组暂无表情，请在下方添加</p>
+         <!-- 所有的图片缩略图会渲染在这里 -->
+      </div>
+
+      <!-- 底部添加表单 -->
+      <div class="flex flex-col gap-2 border-t border-white/10 pt-4 mt-auto">
+         <div class="flex gap-2">
+           <input type="text" id="input-sticker-name" placeholder="名称(如:开心)" class="w-1/4 bg-white/5 rounded-xl px-3 py-2 text-xs outline-none border border-white/10 text-white placeholder-white/30" />
+           <input type="text" id="input-sticker-url" placeholder="图片格式 URL 链接..." class="flex-1 bg-white/5 rounded-xl px-3 py-2 text-xs outline-none border border-white/10 text-white placeholder-white/30" />
+         </div>
+         <div class="flex gap-2 mt-1">
+           <button id="btn-batch-import-stickers" class="w-1/3 py-2.5 rounded-xl bg-purple-500/20 text-purple-400 font-bold border border-purple-500/30 hover:bg-purple-500/30 text-[10px] flex items-center justify-center gap-1"><i data-lucide="layers" class="w-3 h-3"></i>批量</button>
+           <button id="btn-add-single-sticker" class="flex-1 py-2.5 rounded-xl bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30 hover:bg-blue-500/30 text-xs shadow-lg shadow-blue-500/10">添加单个</button>
+         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量导入与角色授权弹窗(二层复用弹窗) -->
+  <div id="sticker-second-modal" class="absolute inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center px-6 hidden">
+    <div class="bg-[#1e1e24] border border-white/10 rounded-[2.5rem] p-6 w-full max-w-sm flex flex-col shadow-2xl anim-scale-in">
+      <h3 id="sticker-second-title" class="text-center font-bold mb-2 text-lg text-white">弹窗标题</h3>
+      <p id="sticker-second-desc" class="text-[10px] text-yellow-500/70 mb-4 text-center leading-relaxed">说明文字</p>
+      
+      <!-- 动态内容区 -->
+      <div id="sticker-second-content" class="mb-6 flex-1 flex flex-col min-h-0"></div>
+
+      <div class="flex gap-3">
+         <button id="btn-cancel-second-modal" class="flex-1 py-3.5 bg-white/5 text-white/50 font-bold rounded-xl hover:bg-white/10">取消</button>
+         <button id="btn-confirm-second-modal" class="flex-1 py-3.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 active:scale-95">确认</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 账号设置弹窗 -->
   <div id="account-settings-modal" class="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center px-6 hidden">
     <div class="bg-white/10 border border-white/20 rounded-[2.5rem] p-6 w-full max-w-sm anim-scale-in shadow-2xl">
@@ -1374,7 +1607,7 @@
     </div>
   </div>
   <!-- 8. 发起单聊弹窗 -->
-  <div id="chat-single-modal" class="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center px-6 hidden">
+  <div id="chat-single-modal" class="absolute inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center px-6 hidden">
     <div class="bg-white/10 border border-white/20 rounded-[2.5rem] p-6 w-full max-w-sm flex flex-col h-[60vh] anim-scale-in">
       <h2 class="text-center font-bold mb-4">发起聊天</h2>
       <p class="text-[10px] opacity-40 text-center mb-4">选择一个联系人开始聊天</p>
@@ -1753,7 +1986,7 @@
             <!-- 新增：歌曲名输入框 -->
             <input type="text" id="input-local-music-name" placeholder="歌曲名称..." class="w-full bg-black/40 rounded-xl px-4 py-3 text-sm outline-none border border-white/10" />
             <button id="btn-upload-lrc" class="w-full py-3 rounded-xl bg-white/10 text-sm flex items-center justify-center gap-2 hover:bg-white/20"><i data-lucide="file-text" class="w-4 h-4"></i> 选择 LRC 歌词 (可选)</button>
-            <input type="file" id="input-file-mp3" accept="audio/*" class="hidden" />
+            <input type="file" id="input-file-mp3" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac" class="hidden" />
             <input type="file" id="input-file-lrc" accept=".lrc" class="hidden" />
             <!-- 新增：确认添加按钮 -->
             <button id="btn-add-local-music" class="w-full py-3 rounded-xl bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">添加至列表</button>
@@ -2113,39 +2346,6 @@
       </div>
     </div>
   </div>
-  <!-- 转账输入弹窗 (层级设为 z-[700]) -->
-  <div id="transfer-modal" class="absolute inset-0 z-[700] bg-black/60 backdrop-blur-md flex items-center justify-center px-6 hidden">
-    <div class="bg-zinc-900 border border-white/10 rounded-[2.5rem] p-8 w-full max-w-sm flex flex-col anim-scale-in shadow-2xl">
-      <h2 class="text-center font-bold text-lg mb-2">转账给 <span id="transfer-target-name" class="text-orange-500">某人</span></h2>
-      <p class="text-[10px] text-center opacity-40 mb-6 uppercase tracking-widest">工行实时结算系统</p>
-      
-      <div class="flex flex-col gap-4 mb-6">
-        <!-- 金额输入 -->
-        <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-          <label class="text-[10px] opacity-40 block mb-2 font-bold">转账金额 (元)</label>
-          <div class="flex items-end gap-2">
-            <span class="text-2xl font-bold">¥</span>
-            <input type="number" id="input-transfer-amount" placeholder="0.00" class="bg-transparent border-none outline-none text-4xl font-black w-full text-orange-500" />
-          </div>
-          <!-- 余额提醒（动态变化） -->
-          <div id="transfer-balance-hint" class="text-[10px] mt-3 opacity-30">
-            工行卡当前可用余额 ¥<span id="transfer-current-balance">0.00</span>
-          </div>
-        </div>
-        
-        <!-- 留言输入 -->
-        <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-          <label class="text-[10px] opacity-40 block mb-2 font-bold">转账留言</label>
-          <input type="text" id="input-transfer-note" maxlength="20" placeholder="点击添加留言(20字以内)..." class="bg-transparent border-none outline-none text-sm w-full text-white" />
-        </div>
-      </div>
-      
-      <div class="flex gap-3">
-        <button id="btn-cancel-transfer" class="flex-1 py-4 rounded-2xl bg-white/5 font-bold text-white/50">取消</button>
-        <button id="btn-confirm-transfer" class="flex-1 py-4 rounded-2xl bg-orange-600 text-white font-black shadow-lg shadow-orange-600/20 active:scale-95 transition-all">确认转账</button>
-      </div>
-    </div>
-  </div>
   <!-- 转账输入弹窗 (层级设为 z-[700] 绝对顶层) -->
   <div id="transfer-modal" class="absolute inset-0 z-[700] bg-black/60 backdrop-blur-md flex items-center justify-center px-6 hidden">
     <div class="bg-zinc-900 border border-white/10 rounded-[2.5rem] p-8 w-full max-w-sm flex flex-col anim-scale-in shadow-2xl">
@@ -2497,6 +2697,8 @@ let worldBook = {
   character: []   // 4. 角色设定 (挂载)
 };
 let currentWorldCategory = 'world'; // 当前选中的分类
+let stickerGroups = []; // 表情包分组及其数据
+let currentStickerGroupId = ""; // 管理界面当前选中组
     // --- Off-line 数据 ---
     let offlineScenes = [];
     let currentOfflineSceneId = null; // 记录用户当前所在的场景
@@ -2521,6 +2723,14 @@ let currentWorldCategory = 'world'; // 当前选中的分类
       { id: 'style-default', name: '标准现代散文', desc: '使用标准现代汉语，叙述平实、通顺。注重感官细节（视觉、听觉、嗅觉）的铺陈以营造氛围。笔触较为中立，不带有强烈的个人文学色彩或特殊的修辞偏好。在描写与对话之间保持平衡，逻辑清晰。' }
     ];
     let currentWritingStyleId = 'style-default';
+
+    // --- Darkroom 美化数据 ---
+    let darkroomData = {
+      wallpaper: 'https://iili.io/BoXEHcx.jpg',
+      bubbleCss: '',
+      globalChatBg: '',
+      contactChatBgs: {} // 格式 { "角色ID": "背景图片" }
+    };
 
     let gameSettings = {
       name: '游戏名称',
@@ -3123,10 +3333,11 @@ let currentWorldCategory = 'world'; // 当前选中的分类
             mapData, userLocation,
             momentsCoverImg: document.getElementById('moments-cover-img') ? document.getElementById('moments-cover-img').src : "",
             playlist, currentTrackIndex, userPlaylists,
-            apiPresets, minimaxSettings, currentPresetId, worldBook,
+            apiPresets, minimaxSettings, currentPresetId, worldBook, stickerGroups,
             userAssets, transactionHistory, gameSettings, 
-            writingStyles, currentWritingStyleId, cityWeatherMap,
+            writingStyles, currentWritingStyleId, cityWeatherMap,darkroomData,
             gamePlayerId, gameFriends, gameConversations, gameTeamHistory, gameTeam, gameTeamConv,
+            polaroidData, // 【新增：拍立得核心数据】
             apiSettings: {
                 url: getVal('api-url'),
                 key: getVal('api-key'),
@@ -3168,9 +3379,22 @@ let currentWorldCategory = 'world'; // 当前选中的分类
     function loadSaveData(saveData) {
       if (!saveData) return;
       if (saveData.cityWeatherMap) cityWeatherMap = saveData.cityWeatherMap;
+      if (saveData.darkroomData) {
+        darkroomData = saveData.darkroomData;
+        applyDarkroomData(); // 读档后立即刷新美化效果
+      }
       if (saveData.worldBook) worldBook = saveData.worldBook;
+      if (saveData.stickerGroups) stickerGroups = saveData.stickerGroups;
       if (saveData.userAssets !== undefined) userAssets = saveData.userAssets;
       if (saveData.transactionHistory) transactionHistory = saveData.transactionHistory;
+      // 恢复拍立得数据并启动
+      if (saveData.polaroidData) {
+        polaroidData = saveData.polaroidData;
+        updatePolaroidDisplay();
+        startPolaroidTimer();
+      } else {
+        updatePolaroidDisplay(); // 如果是旧存档或者第一次打开，走初始化展示
+      }
       if (saveData.momentsCoverImg) document.getElementById('moments-cover-img').src = saveData.momentsCoverImg;
       if (saveData.gameSettings) {
         gameSettings = saveData.gameSettings;
@@ -3316,13 +3540,13 @@ let currentWorldCategory = 'world'; // 当前选中的分类
           // simTimeMs 从 roleLastTime 开始，每次步进到下一个计划结束的时间点
           let simTimeMs = isForceRefresh ? roleLastTime : (role.planEndTime || roleLastTime); 
           
-          while (simTimeMs <= nowTime) {
+          let catchUpLimit = 0; // 新增安全计数器，防止 AI 请求爆炸
+          while (simTimeMs <= nowTime && catchUpLimit < 3) {
+            catchUpLimit++;
             const simDate = new Date(simTimeMs);
             const simHour = simDate.getHours();
-            // 格式化时间：补齐两位数
             const dateStr = `${simDate.getMonth()+1}月${simDate.getDate()}日 ${simHour.toString().padStart(2, '0')}:${simDate.getMinutes().toString().padStart(2, '0')}`;
 
-            // 优先使用角色的专属作息表（如果有）
             let nextPlanActivity = "";
             let nextPlanStatus = "正常";
             let nextPlanDuration = 2;
@@ -3334,7 +3558,7 @@ let currentWorldCategory = 'world'; // 当前选中的分类
               else if (simHour >= 18) period = 'evening';
               nextPlanActivity = role.dailySchedule[period];
               nextPlanStatus = "正常";
-              nextPlanDuration = 3; // 作息表默认时段较长
+              nextPlanDuration = 3;
             } else {
               const nextPlan = pickEventByHour(simHour, role);
               nextPlanActivity = nextPlan.activity;
@@ -3345,37 +3569,52 @@ let currentWorldCategory = 'world'; // 当前选中的分类
             role.currentPlan = nextPlanActivity;
             role.status = nextPlanStatus;
             
-            // 只有在真正切换了新计划时，才调用 AI 润色并写入最新记事
             if (chars.some(c => c.id === role.id)) {
-              // 玩家角色：所有缺失的记事都让AI补全
               const newNote = { date: dateStr, text: "回忆中..." };
               role.notes.push(newNote);
-              role.isRecallingCount = (role.isRecallingCount || 0) + 1; // 标记开始回忆
+              role.isRecallingCount = (role.isRecallingCount || 0) + 1;
               
-              // 异步调用AI，利用对象引用(noteRef)直接修改文本
+              // 关键修复：加入 30 秒超时强制解锁，防止 AI 没响应导致一直转圈
+              let timeoutTriggered = false;
+              const recallTimeout = setTimeout(() => {
+                if (newNote.text === "回忆中...") {
+                    newNote.text = role.currentPlan + " (模糊的片段)";
+                    role.isRecallingCount = Math.max(0, role.isRecallingCount - 1);
+                    timeoutTriggered = true;
+                    // 刷新UI
+                    if (!views.npcDetail.classList.contains('hidden') && activeNpcId === role.id) renderNpcNotes(role);
+                }
+              }, 30000);
+
               (async (noteRef, planText, timeStr) => {
                 try {
                   const prompt = `你现在是：${role.name}。你的设定是：${role.details || '无'}。现在是 ${timeStr}点，你正在：${planText}。请用第一人称简短描述你现在的动作，30字以内，要标点。`;
                   const reply = await callLLM(prompt, []);
-                  noteRef.text = reply.trim(); // AI生成完毕，替换掉“回忆中...”
+                  if (!timeoutTriggered) {
+                    noteRef.text = reply.trim();
+                    clearTimeout(recallTimeout);
+                  }
                 } catch (e) {
-                  noteRef.text = planText; // 失败则用默认文本
+                  if (!timeoutTriggered) noteRef.text = planText;
                 } finally {
-                  role.isRecallingCount = Math.max(0, role.isRecallingCount - 1); // 标记回忆结束
-                  // 刷新UI：如果当前正开着这个角色的记事本，立刻更新画面
-                  if (!views.npcDetail.classList.contains('hidden') && activeNpcId === role.id) renderNpcNotes(role);
-                  if (!document.getElementById('role-notes-modal').classList.contains('hidden') && document.getElementById('role-notes-title').textContent.includes(role.name)) openRoleNotes(role);
+                  if (!timeoutTriggered) {
+                    role.isRecallingCount = Math.max(0, role.isRecallingCount - 1);
+                    clearTimeout(recallTimeout);
+                    if (!views.npcDetail.classList.contains('hidden') && activeNpcId === role.id) renderNpcNotes(role);
+                  }
                 }
               })(newNote, role.currentPlan, simHour);
             } else {
-              // NPC：直接从库里抽取（瞬间完成）
               role.notes.push({ date: dateStr, text: role.currentPlan });
             }
 
             if (role.notes.length > 20) role.notes.shift();
-            
-            // 步进：前进到这个新计划的结束时间
             simTimeMs += (nextPlanDuration * 3600000);
+            role.planEndTime = simTimeMs;
+          }
+          // 如果补齐次数到了上限，强制把时间拉到当前，防止下次打开还卡在这里
+          if (catchUpLimit >= 3) {
+            simTimeMs = nowTime + 3600000;
             role.planEndTime = simTimeMs;
           }
         }
@@ -3388,29 +3627,10 @@ let currentWorldCategory = 'world'; // 当前选中的分类
       renderSceneFloatingAvatars(); // 确保刷新后头像立刻显示
       updateGlobalLocationUI(); // 修复：读档后立即刷新定位显示
 
-      if (totalGapHours > 0) {
-
-            // 2. 补全离线消息 (仅限关系好的联系人)
-            const acc = getCurAcc();
-            if (acc.contacts && acc.contacts.length > 0) {
-              const luckyRole = acc.contacts.filter(c => c.intimacyStage !== '陌生').sort(() => Math.random() - 0.5)[0];
-              if (luckyRole) {
-                const pastTime = new Date(nowTime - (Math.random() * totalGapHours * 3600000));
-                const timeStr = `${pastTime.getHours().toString().padStart(2, '0')}:${pastTime.getMinutes().toString().padStart(2, '0')}`;
-                let conv = acc.conversations.find(c => c.id === luckyRole.id);
-                if (!conv) {
-                  conv = { id: luckyRole.id, name: luckyRole.name, avatar: luckyRole.avatar, messages: [], isGroup: false };
-                  acc.conversations.push(conv);
-                }
-                const msgPrompt = `你现在是：${luckyRole.name}。用户离开了 ${totalGapHours.toFixed(1)} 小时。现在大约是 ${timeStr}。请给用户留一条极其生活化的留言，结合你当时的计划（${luckyRole.currentPlan}）。禁止说“欢迎回来”，直接说事。`;
-            callLLM(msgPrompt, []).then(reply => {
-              conv.messages.push({ senderId: luckyRole.id, senderAvatar: luckyRole.avatar, text: reply, time: pastTime.getTime() });
-              conv.lastMsg = reply; conv.time = timeStr;
-              conv.unreadCount = (conv.unreadCount || 0) + 1; // 增加未读计数
-              if (!views.chat.classList.contains('hidden')) renderChatList();
-            }).catch(e => console.warn("离线消息补全失败", e));
-          }
-        }
+      // 1. 离线时间必须大于等于 1 小时，才触发离线消息机制，防止频繁刷新打扰
+      if (totalGapHours >= 1) {
+        // 调用专用的离线补全函数
+        catchUpMissedMessages(totalGapHours);
       }
     }
 
@@ -4685,6 +4905,9 @@ let currentWorldCategory = 'world'; // 当前选中的分类
               <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0"><i data-lucide="phone" class="w-4 h-4"></i></div>
               <div class="flex flex-col"><span class="text-sm font-bold text-white">语音通话</span><span class="text-[10px] opacity-60">${msg.text}</span></div>
             </div>`;
+        } else if (msg.msgType === 'sticker') {
+          isSpecial = true;
+          contentHtml = `<img src="${msg.stickerUrl}" class="w-auto h-auto max-w-[140px] rounded-lg shadow-sm cursor-pointer active:scale-95" />`;
         } else if (msg.msgType === 'photo') {
           isSpecial = true;
           const d = new Date(msg.time);
@@ -4727,8 +4950,8 @@ let currentWorldCategory = 'world'; // 当前选中的分类
           contentHtml = quoteHtml + contentHtml;
         }
 
-        // 如果是特殊气泡，就不使用默认的绿色/灰色背景
-        let bubbleClass = isSpecial ? '' : (isMe ? 'msg-right msg-bubble' : 'msg-left msg-bubble');
+        // 如果是特殊气泡，且是表情包，加上专属无白框类名
+        let bubbleClass = isSpecial ? (msg.msgType === 'sticker' ? 'msg-sticker' : '') : (isMe ? 'msg-right msg-bubble' : 'msg-left msg-bubble');
 
         // --- 新增：群聊显示名字逻辑 ---
      let nameLabel = '';
@@ -5678,7 +5901,10 @@ ${physicalProtocol}
       }
 
       if (isLover) {
-        prompt += `\n【关系状态：恋人】你们已确立关系，请表现出极度的爱意、占有欲和亲昵。`;
+        prompt += `\n【关系状态：远距离恋人】:
+你们虽然已经确立关系，但此刻【处于异地/分居】状态。
+你可以表现得极度肉麻、粘人、吃醋，但一切亲昵动作（如：抱抱、亲亲、贴贴）必须明确表达为【隔着屏幕的想象】（例如：‘真想现在就抱抱你’），绝对禁止描写为已经发生的动作！
+发现任何用户不在你视线内的细节（如他在吃什么、穿什么），你必须表达为“好奇”或“听他说起”，而不是“亲眼看到”。`;
       } else {
         prompt += `\n【好感度阶段】：${stage}。`;
         if (role.intimacyScore > 95) prompt += `\n[表白冲动]：情感已溢出，请寻找时机表白，成功后在末尾加 [关系升级] 标签。`;
@@ -8898,6 +9124,11 @@ async function triggerNpcInteractions(newMoment) {
           
           const commentText = await callLLM(prompt, []);
           newMoment.comments.push({ authorId: contact.id, text: commentText.trim() });
+          
+          // 让发帖人也对这条 NPC 的留言进行回复 (为防止请求过多，设定 50% 概率回复其他 NPC)
+          if (Math.random() < 0.5) {
+            triggerMomentReply(newMoment.id, contact.id, commentText.trim());
+          }
         } catch (e) {
           console.warn("NPC 自动评论失败", e);
         }
@@ -8906,6 +9137,138 @@ async function triggerNpcInteractions(newMoment) {
   }
   // 互动完成后刷新界面
   if (!views.moments.classList.contains('hidden')) renderMoments();
+}
+
+// --- 新增：作者回复评论核心逻辑 (旗舰记忆版 + 楼主插话) ---
+async function triggerMomentReply(momentId, commenterId, commentText, targetId = null, targetText = null) {
+  const acc = getCurAcc();
+  if (!acc || !acc.momentsData) return;
+  const moment = acc.momentsData.find(m => m.id === momentId);
+  if (!moment) return;
+
+  const commenter = [...masks, ...chars, ...npcs].find(r => r.id === commenterId);
+  const commenterName = commenter ? commenter.name : '某人';
+  const poster = [...masks, ...chars, ...npcs].find(r => r.id === moment.authorId) || { id: 'unknown', name: '某人' };
+
+  // 1. 确定直接回复的对象 (谁被艾特了，也就是谁该还嘴)
+  const responderId = targetId ? targetId : moment.authorId;
+  
+  // 提取完整的历史评论，让 AI 看到完整的对话上下文
+  const commentsHistory = moment.comments.map(c => {
+    const cName = [...masks, ...chars, ...npcs].find(r => r.id === c.authorId)?.name || '某人';
+    const cReply = c.replyToName ? ` 回复 ${c.replyToName}` : '';
+    return `${cName}${cReply}: ${c.text}`;
+  }).join('\n');
+
+  // ==========================================
+  // 第 1 步：处理直接被艾特的人的真实反应
+  // ==========================================
+  if (responderId !== currentMaskId) {
+    const responder = [...chars, ...npcs].find(r => r.id === responderId);
+    if (responder) {
+      try {
+        // [极度关键的记忆与关系抽取]
+        const memories = (responder.memories && responder.memories.length > 0) ? responder.memories.map(m => m.text).join('；') : "暂无深刻记忆";
+        let relStr = "";
+        if (responder.relation && responder.relation.targetId) {
+          let tName = responder.relation.targetId === 'me' ? "用户(我)" : ([...masks, ...chars, ...npcs].find(x => x.id === responder.relation.targetId)?.name || "未知");
+          relStr = `\n【社会关系】：你是 [${tName}] 的 [${responder.relation.label}]。`;
+        }
+
+        let prompt = `你现在是：${responder.name}。性格：${responder.details || '无'}。
+【你的深度记忆】：${memories}${relStr}
+【防御铁律】：绝对禁止凭空捏造没有发生过的交情（比如把刚认识的人编造成青梅竹马）。如果不熟，就表现出不熟的态度！一切以你的记忆碎片为准！
+
+这里是 ${poster.name} 的朋友圈：“${moment.content || '分享了一张照片'}”。
+当前的评论区聊天现场如下：
+${commentsHistory || '暂无其他评论'}
+
+情况：[${commenterName}] 刚刚对你说：“${commentText}”。
+任务：请直接回怼或回复 [${commenterName}]，15字以内，绝对符合你的性格、记忆和关系状况。直接输出你的回复文字，绝不要带任何前缀或引号。`;
+
+        const replyText = await callLLM(prompt, []);
+
+        moment.comments.push({
+          authorId: responder.id,
+          replyToName: commenterName,
+          replyToId: commenterId,
+          replyToText: commentText,
+          text: replyText.trim()
+        });
+
+        if (!views.moments.classList.contains('hidden')) renderMoments();
+        if (commenterId === currentMaskId) {
+          showGlobalNotification(responder.id, responder.name, responder.avatar, `朋友圈回复了你: ${replyText.trim()}`, false);
+        }
+      } catch (e) {
+        console.warn("直接回复生成失败", e);
+      }
+    }
+  }
+
+  // ==========================================
+  // 第 2 步：原帖主人（楼主）暗中观察与意外插话机制
+  // ==========================================
+  // 条件：这不是楼主自己的互相回复，且楼主是NPC
+  if (poster.id !== currentMaskId && poster.id !== commenterId && poster.id !== responderId) {
+    // 抓取刚刚更新过的新评论区现场
+    const updatedCommentsHistory = moment.comments.map(c => {
+      const cName = [...masks, ...chars, ...npcs].find(r => r.id === c.authorId)?.name || '某人';
+      const cReply = c.replyToName ? ` 回复 ${c.replyToName}` : '';
+      return `${cName}${cReply}: ${c.text}`;
+    }).join('\n');
+
+    try {
+      const pMemories = (poster.memories && poster.memories.length > 0) ? poster.memories.map(m => m.text).join('；') : "暂无深刻记忆";
+      let pRelStr = "";
+      if (poster.relation && poster.relation.targetId) {
+        let tName = poster.relation.targetId === 'me' ? "用户(我)" : ([...masks, ...chars, ...npcs].find(x => x.id === poster.relation.targetId)?.name || "未知");
+        pRelStr = `\n【社会关系】：你是 [${tName}] 的 [${poster.relation.label}]。`;
+      }
+
+      let hostPrompt = `你现在是：${poster.name}。性格：${poster.details || '无'}。
+【你的深度记忆】：${pMemories}${pRelStr}
+
+这是你发的朋友圈：“${moment.content || '分享了一张照片'}”。
+结果现在，[${commenterName}] 和另一人正在你的朋友圈评论区里热聊（或者吵架）。
+这是你自己的地盘，评论区最新动态如下：
+${updatedCommentsHistory}
+
+任务：作为楼主，你想插进他们的话题说点什么吗？
+- 如果你觉得事不关己、或者不想接话茬，请严格回复：[保持沉默]
+- 如果你想插话（比如吐槽他们刷屏、劝架、或者就着话题凑热闹），请回复内容（15字以内），并指定你要回复谁。
+- 回复的格式必须是：[回复: 名字] 你的回复内容。比如：[回复: 发小] 你们怎么在我这儿聊起来了？`;
+
+      const hostReply = await callLLM(hostPrompt, []);
+      
+      if (!hostReply.includes('[保持沉默]')) {
+        // 解析楼主决定回复给谁
+        const match = hostReply.match(/\[回复[:：]\s*(.*?)\](.*)/);
+        if (match) {
+          const targetName = match[1].trim();
+          const finalHostText = match[2].trim();
+          
+          // 给楼主增加 3.5 秒的打字延迟，制造正在屏幕前打字看戏的真实感
+          setTimeout(() => {
+            moment.comments.push({
+              authorId: poster.id,
+              replyToName: targetName,
+              text: finalHostText
+            });
+            
+            if (!views.moments.classList.contains('hidden')) renderMoments();
+            
+            // 如果楼主恰好回怼了玩家本人，就在上方弹出一个提示
+            if (targetName === (masks.find(m=>m.id===currentMaskId)?.name)) {
+              showGlobalNotification(poster.id, poster.name, poster.avatar, `朋友圈回复了你: ${finalHostText}`, false);
+            }
+          }, 3500); 
+        }
+      }
+    } catch (e) {
+      console.warn("楼主插话生成失败", e);
+    }
+  }
 }
 
     // --- 朋友圈逻辑 ---
@@ -8939,7 +9302,10 @@ async function triggerNpcInteractions(newMoment) {
         let likesHtml = moment.likes.length ? `<div class="bg-white/5 px-3 py-2 rounded-t-xl text-xs text-blue-400 flex gap-2 items-center"><i data-lucide="heart" class="w-3 h-3"></i> ${moment.likes.map(id => ([...masks, ...chars, ...npcs].find(r=>r.id===id)||{name:'某人'}).name).join(', ')}</div>` : '';
         let commentsHtml = moment.comments.map(c => {
           const cAuthor = [...masks, ...chars, ...npcs].find(r => r.id === c.authorId) || { name: '未知' };
-          return `<div class="px-3 py-1 text-xs"><span class="text-blue-400 font-medium">${cAuthor.name}</span>: <span class="opacity-80">${c.text}</span></div>`;
+          const replyHtml = c.replyToName ? ` <span class="text-white/60 mx-1 text-[10px]">回复</span> <span class="text-blue-400 font-medium">${c.replyToName}</span>` : '';
+          // 将文案进行安全编码，防止标点符号导致代码报错
+          const safeText = encodeURIComponent(c.text);
+          return `<div class="px-3 py-1 text-xs mb-0.5 leading-relaxed cursor-pointer hover:bg-white/10 rounded transition-colors" onclick="replyToComment('${moment.id}', '${c.authorId}', '${cAuthor.name}', '${safeText}')"><span class="text-blue-400 font-medium">${cAuthor.name}</span>${replyHtml}<span class="opacity-80">：${c.text}</span></div>`;
         }).join('');
         let interactionHtml = (likesHtml || commentsHtml) ? `<div class="mt-3 bg-white/5 rounded-xl overflow-hidden">${likesHtml}<div class="py-1">${commentsHtml}</div></div>` : '';
 
@@ -8995,6 +9361,34 @@ async function triggerNpcInteractions(newMoment) {
         renderMoments();
       }
     };
+    // 5.5 回复特定评论 (楼中楼)
+    window.replyToComment = function(momentId, targetAuthorId, targetName, safeTargetText) {
+      if(!currentMaskId && masks.length > 0) currentMaskId = masks[0].id;
+      if(!currentMaskId) return alert("请先创建并选择一个面具！");
+      
+      // 防止用户精神分裂自己回复自己...
+      if (targetAuthorId === currentMaskId) return;
+
+      const targetText = decodeURIComponent(safeTargetText);
+      const text = prompt(`回复 ${targetName}：`); 
+      
+      if(text && text.trim()) {
+        const moments = getCurAcc().momentsData;
+        const moment = moments.find(m => m.id === momentId);
+        if (moment) {
+          moment.comments.push({ 
+            authorId: currentMaskId, 
+            replyToName: targetName,
+            replyToId: targetAuthorId, // 悄悄记录我们在跟谁说话
+            replyToText: targetText,   // 悄悄记录对方原话
+            text: text.trim() 
+          });
+          renderMoments();
+          // 带着所有前因后果去敲门，触发对应人物的反应
+          triggerMomentReply(momentId, currentMaskId, text.trim(), targetAuthorId, targetText);
+        }
+      }
+    };
 
     // 5. 评论功能
     window.addComment = function(momentId) {
@@ -9006,6 +9400,8 @@ async function triggerNpcInteractions(newMoment) {
         const moment = moments.find(m => m.id === momentId);
         moment.comments.push({ authorId: currentMaskId, text: text.trim() });
         renderMoments();
+        // 触发作者自动回复评论
+        triggerMomentReply(momentId, currentMaskId, text.trim());
       }
     };
 
@@ -10803,8 +11199,29 @@ ${recentHistory || '暂无记录'}`;
               if (loc) locInfo = loc.name;
             }
             
-            let intimacyMotivations = role.intimacyStage === '羁绊' ? "强烈的思念和分享欲" : "随口分享一下现在的状态";
-            const prompt = `你现在扮演：${role.name}。你和用户处于【${role.intimacyStage}】阶段。你正身处【${locInfo}】，你当前的计划是：【${role.currentPlan || '休息'}】。请给用户发一条简短的微信消息，不要带动作描写。最近记录：\n${recentHistory || '暂无记录'}`;
+            // 核心逻辑：检查最后一条消息是否是自己发的，以此判断用户是否在“已读不回”
+            const lastMsg = conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null;
+            const isUnanswered = lastMsg && lastMsg.senderId !== currentMaskId;
+            
+            let selfTalkHint = "";
+            if (isUnanswered) {
+              // 告知 AI，你刚才说话了，对方没理你
+              selfTalkHint = `\n【重要追踪】：你上一条消息是：“${lastMsg.text}”。但用户【一直没有回复】。
+请根据性格决定：是继续追问刚才的话题（比如催促拿主意）、吐槽对方消失了、还是自然地转到新话题但要在开头提一句刚才的事。
+绝对禁止像失忆一样假装没发过上一条消息！`;
+            }
+
+            const prompt = `你现在是：${role.name}。
+【物理状态】：你正独自待在【${locInfo}】，用户独自待在远方的家里。
+【警告】：绝对禁止说出任何暗示你们同居、或者你正看着对方的话！
+${selfTalkHint}
+任务：请给用户发一条极具生活气息的微信留言。
+要求：
+1. 语言要琐碎、口语化，像真实的社交。
+2. 严禁描写身体动作，只输出文字。
+3. 严禁带任何角色名前缀。
+4. 【防加戏铁律】：绝对禁止凭空捏造你们共同的未来计划（如“明天的局”、“等会去哪里”），也绝对禁止凭空虚构任何没有在上下文出现过的“第三人”（如“老王”、“我妈”、“店员”）。你的话题只能围绕你自己当前的琐事、情绪，或者顺着之前的历史记录往下聊。
+最近记录：\n${recentHistory || '暂无记录'}`;
 
             callLLM(prompt, []).then(replyText => {
               const msgNow = new Date();
@@ -11405,11 +11822,15 @@ document.getElementById('btn-upload-mp3').onclick = () => document.getElementByI
 document.getElementById('input-file-mp3').onchange = (e) => {
   const file = e.target.files[0];
   if (file) {
-    tempUploadData.url = URL.createObjectURL(file);
-    document.getElementById('btn-upload-mp3').innerHTML = `<i data-lucide="check" class="w-4 h-4 text-green-400"></i> 已选择: ${file.name}`;
-    // 自动把文件名填入输入框
-    document.getElementById('input-local-music-name').value = file.name.replace(/\.[^/.]+$/, "");
-    lucide.createIcons();
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      tempUploadData.url = ev.target.result; // 将音频转换为持久的 Base64 编码
+      document.getElementById('btn-upload-mp3').innerHTML = `<i data-lucide="check" class="w-4 h-4 text-green-400"></i> 已选择: ${file.name}`;
+      // 自动把文件名填入输入框
+      document.getElementById('input-local-music-name').value = file.name.replace(/\.[^/.]+$/, "");
+      lucide.createIcons();
+    };
+    reader.readAsDataURL(file);
   }
 };
 
@@ -11700,7 +12121,9 @@ document.getElementById('wb-btn-save').onclick = () => {
 };
 // --- 新增：离线消息补全函数 ---
     async function catchUpMissedMessages(hoursMissed) {
-      if (hoursMissed <= 0) return;
+      // 再次确认：离开时间小于 1 小时直接拦截
+      if (hoursMissed < 1) return;
+      const hoursInt = Math.floor(hoursMissed); // 将带有小数的时间转为整数（如 1.5小时变成 1小时），防止AI说出小数
       const acc = getCurAcc();
       if (!acc || !acc.contacts || acc.contacts.length === 0) return;
       const settings = getApiSettings();
@@ -11713,7 +12136,9 @@ document.getElementById('wb-btn-save').onclick = () => {
 
       try {
         const now = new Date();
-        const pastTime = new Date(now.getTime() - (Math.random() * hoursMissed * 3600000));
+        // 修改：将时间错位修复。真实回推到用户离线后的大约 10~30 分钟。
+        // 例如：离线了 10 小时，这条消息的时间戳就是约 9 个半小时前。
+        const pastTime = new Date(now.getTime() - (hoursMissed * 3600000) + (Math.random() * 1200000 + 600000));
         const timeStr = `${pastTime.getHours().toString().padStart(2, '0')}:${pastTime.getMinutes().toString().padStart(2, '0')}`;
         
         let conv = acc.conversations.find(c => c.id === role.id);
@@ -11729,7 +12154,7 @@ document.getElementById('wb-btn-save').onclick = () => {
           if (loc) locInfo = loc.name;
         }
 
-        const prompt = `你现在是：${role.name}。用户已经有 ${hoursMissed} 小时没理你了。
+        const prompt = `你现在是：${role.name}。用户已经有 ${hoursInt} 个多小时没理你了。
 现在是现实时间 ${now.getHours()} 点，你正身处【${locInfo}】，你当时的计划/状态是：【${role.currentPlan || '休息'}】。
 
 请你在大约 ${timeStr} 的时候给用户留一条生活化的微信留言。
@@ -11748,8 +12173,14 @@ ${recentHistory || '暂无记录'}`;
           senderId: role.id, senderAvatar: role.avatar,
           text: replyText, msgType: 'text', time: pastTime.getTime()
         });
-        conv.lastMsg = replyText;
-        conv.time = timeStr;
+        // 修复：强制按时间戳重新对所有消息排序。防止你上线“秒回”导致过去的离线消息排在最新记录的底部。
+        conv.messages.sort((a, b) => a.time - b.time);
+        
+        // 确保最外侧的消息预览展示的是时间轴上真正排在最后的那句话
+        const trueLastMsg = conv.messages[conv.messages.length - 1];
+        conv.lastMsg = trueLastMsg.text;
+        const d = new Date(trueLastMsg.time);
+        conv.time = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
         acc.conversations = acc.conversations.filter(c => c.id !== role.id);
         acc.conversations.unshift(conv);
         
@@ -13054,6 +13485,603 @@ refreshChatApp = function() {
     document.getElementById('btn-close-transfer-action').onclick = () => {
       document.getElementById('transfer-action-modal').classList.add('hidden');
     };
+    // ==========================================
+    // --- 表情包库模块及核心引擎 ---
+    // ==========================================
+
+    // 1. 打开表情包库
+    document.getElementById('btn-open-sticker-library').onclick = () => {
+      document.getElementById('account-settings-modal').classList.add('hidden');
+      document.getElementById('sticker-library-modal').classList.remove('hidden');
+      renderStickerGroupsOption();
+    };
+
+    document.getElementById('btn-close-sticker-lib').onclick = () => {
+      document.getElementById('sticker-library-modal').classList.add('hidden');
+      if (!views.chat.classList.contains('hidden')) {
+          refreshChatApp(); // 关掉界面时顺便刷新聊天相关数据
+      }
+    };
+
+    // 2. 渲染分组选择器及缩略图大类
+    function renderStickerGroupsOption() {
+      const select = document.getElementById('select-sticker-group');
+      if (!select) return;
+      select.innerHTML = stickerGroups.length === 0 ? '<option value="">暂无分组</option>' : '';
+      
+      stickerGroups.forEach((group, index) => {
+        select.innerHTML += `<option value="${group.id}">${group.name} (${group.stickers.length})</option>`;
+        if (!currentStickerGroupId && index === 0) currentStickerGroupId = group.id; // 默认第一个
+      });
+
+      if (stickerGroups.length > 0 && !stickerGroups.find(g => g.id === currentStickerGroupId)) {
+        currentStickerGroupId = stickerGroups[0].id;
+      }
+      select.value = currentStickerGroupId;
+      renderCurrentStickerGrid();
+    }
+
+    document.getElementById('select-sticker-group').onchange = (e) => {
+      currentStickerGroupId = e.target.value;
+      renderCurrentStickerGrid();
+    };
+
+    // 3. 渲染下方的缩略图
+    function renderCurrentStickerGrid() {
+      const group = stickerGroups.find(g => g.id === currentStickerGroupId);
+      const container = document.getElementById('sticker-grid-container');
+      const authLabel = document.getElementById('sticker-group-auth-role');
+      const hint = document.getElementById('sticker-empty-hint');
+      
+      if (!group) {
+        container.innerHTML = '';
+        authLabel.textContent = "全员可用";
+        hint.classList.remove('hidden');
+        return;
+      }
+
+      // 同步专属角色名字
+      if (group.authRoles.length === 0) {
+        authLabel.textContent = "全员可用";
+      } else {
+        const names = group.authRoles.map(id => {
+           let r = [...chars, ...npcs].find(x => x.id === id);
+           return r ? r.name : '未知';
+        }).join(',');
+        authLabel.textContent = names.length > 8 ? names.slice(0, 8) + "..." : names;
+      }
+
+      container.innerHTML = '';
+      if (group.stickers.length === 0) {
+        hint.classList.remove('hidden');
+      } else {
+        hint.classList.add('hidden');
+        group.stickers.forEach((s, idx) => {
+          container.insertAdjacentHTML('beforeend', `
+            <div class="relative w-full aspect-square rounded-lg overflow-hidden group border border-white/5 bg-white/5" title="${s.name}">
+              <img src="${s.url}" class="w-full h-full object-cover p-1" />
+              <div class="absolute bottom-0 w-full bg-black/60 text-center text-[10px] text-white/90 truncate py-0.5">${s.name}</div>
+              <button onclick="deleteSticker('${s.id}')" class="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <i data-lucide="x" class="w-3 h-3 text-white"></i>
+              </button>
+            </div>
+          `);
+        });
+        lucide.createIcons();
+      }
+    }
+
+    // 4. 获取唯一ID和删除项
+    window.deleteSticker = (id) => {
+       const group = stickerGroups.find(g => g.id === currentStickerGroupId);
+       if (group && confirm("确定删除这个表情吗？")) {
+         group.stickers = group.stickers.filter(s => s.id !== id);
+         renderCurrentStickerGrid();
+         renderStickerGroupsOption(); // 更新下拉括号里的数量
+       }
+    };
+
+    // 5. 新建与删除分组
+    document.getElementById('btn-new-sticker-group').onclick = () => {
+      let name = prompt("请输入分组名称：");
+      if (name && name.trim()) {
+        const newId = 'stg-' + Date.now();
+        stickerGroups.push({ id: newId, name: name.trim(), authRoles: [], stickers: [] });
+        currentStickerGroupId = newId;
+        renderStickerGroupsOption();
+      }
+    };
+    
+    document.getElementById('btn-delete-sticker-group').onclick = () => {
+      if (!currentStickerGroupId) return alert("请先选择一个分组");
+      const group = stickerGroups.find(g => g.id === currentStickerGroupId);
+      if (confirm(`确定要永久删除分类【${group.name}】及所有内部表情吗？`)) {
+        stickerGroups = stickerGroups.filter(g => g.id !== currentStickerGroupId);
+        currentStickerGroupId = stickerGroups.length > 0 ? stickerGroups[0].id : null;
+        renderStickerGroupsOption();
+      }
+    };
+
+    // 6. 添加单个表情
+    document.getElementById('btn-add-single-sticker').onclick = () => {
+      const group = stickerGroups.find(g => g.id === currentStickerGroupId);
+      if (!group) return alert("请先选择或创建一个分组！");
+      const name = document.getElementById('input-sticker-name').value.trim();
+      const url = document.getElementById('input-sticker-url').value.trim();
+      if (!name || !url) return alert("名称和图片URL不能为空！");
+      group.stickers.push({ id: 'stk-' + Date.now(), name, url });
+      document.getElementById('input-sticker-name').value = '';
+      document.getElementById('input-sticker-url').value = '';
+      renderStickerGroupsOption();
+    };
+
+    // 7. 打开专属授权面板复用层
+    document.getElementById('btn-set-sticker-auth').onclick = () => {
+      const group = stickerGroups.find(g => g.id === currentStickerGroupId);
+      if (!group) return;
+      document.getElementById('sticker-second-title').textContent = "设置专属权限";
+      document.getElementById('sticker-second-desc').textContent = "勾选后，只有跟这些主人们聊天时，AI 和你才能在这个组里选图。（不勾选=全员皆可发）";
+      
+      const acc = getCurAcc();
+      const content = document.getElementById('sticker-second-content');
+      content.innerHTML = `<div class="max-h-48 overflow-y-auto bg-black/20 p-2 rounded-xl border border-white/5 flex flex-col gap-1"></div>`;
+      const list = content.children[0];
+
+      if (acc.contacts.length === 0) {
+        list.innerHTML = '<p class="text-xs text-center opacity-40 py-2">请先导入联系人</p>';
+      } else {
+        acc.contacts.forEach(c => {
+          const isAuth = group.authRoles.includes(c.id);
+          list.innerHTML += `
+            <label class="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer transition-colors text-sm text-white">
+              <input type="checkbox" class="auth-cb w-4 h-4 accent-blue-500" value="${c.id}" ${isAuth ? 'checked' : ''}>
+              ${c.name}
+            </label>
+          `;
+        });
+      }
+      
+      document.getElementById('btn-confirm-second-modal').onclick = () => {
+          group.authRoles = Array.from(document.querySelectorAll('.auth-cb:checked')).map(cb => cb.value);
+          renderCurrentStickerGrid();
+          document.getElementById('sticker-second-modal').classList.add('hidden');
+      };
+      document.getElementById('sticker-second-modal').classList.remove('hidden');
+    };
+
+    document.getElementById('btn-cancel-second-modal').onclick = () => {
+        document.getElementById('sticker-second-modal').classList.add('hidden');
+    };
+
+    // 8. 批量导入
+    document.getElementById('btn-batch-import-stickers').onclick = () => {
+      const group = stickerGroups.find(g => g.id === currentStickerGroupId);
+      if (!group) return alert("请先选择或创建一个分组！");
+      document.getElementById('sticker-second-title').textContent = "批量导入表情";
+      document.getElementById('sticker-second-desc').innerHTML = "格式一行一个，名字和网址用冒号隔开。<br><span class='text-white/40'>格式如: 开心:https://xxx.jpg</span>";
+      
+      const content = document.getElementById('sticker-second-content');
+      content.innerHTML = `<textarea id="batch-import-text" class="flex-1 w-full bg-black/20 rounded-xl p-3 text-xs outline-none border border-white/10 text-white placeholder-white/30 resize-none h-40" placeholder="开心:https://...\n委屈:https://..."></textarea>`;
+      
+      document.getElementById('btn-confirm-second-modal').onclick = () => {
+        const text = document.getElementById('batch-import-text').value.trim();
+        if (!text) return document.getElementById('sticker-second-modal').classList.add('hidden');
+        const lines = text.split('\n');
+        let count = 0;
+        lines.forEach(line => {
+           let parts = line.split(/[:：]/); // 兼容中英文冒号
+           if (parts.length >= 2) {
+             const name = parts[0].trim();
+             const url = parts.slice(1).join(':').trim(); // 防止链接里的 http: 被且断
+             if (name && url) {
+               group.stickers.push({ id: 'stk-' + Date.now() + count, name, url });
+               count++;
+             }
+           }
+        });
+        if (count > 0) {
+           renderStickerGroupsOption();
+           alert(`成功导入 ${count} 张表情！`);
+        } else {
+           alert("未解析到格式正确的一条！");
+        }
+        document.getElementById('sticker-second-modal').classList.add('hidden');
+      };
+      
+      document.getElementById('sticker-second-modal').classList.remove('hidden');
+    };
+
+    // ==========================================
+    // 聊天面板笑脸栏及 AI 认知引擎挂载
+    // ==========================================
+
+    // 获取当前聊天里，大家都有权用的所有表情包库
+    function getAvailableStickerGroups() {
+      // 全员可用的 + “只授权给你正在聊天的人”的组合
+      const targetRole = [...chars, ...npcs].find(r => r.id === activeChatId);
+      const allowIds = targetRole ? [targetRole.id] : [];
+      return stickerGroups.filter(g => g.authRoles.length === 0 || g.authRoles.some(id => allowIds.includes(id)));
+    }
+
+    let activeChatStickerGroup = null; // 笑脸弹窗里当前点开的小标签
+
+    // 1. 改造笑脸点击反应：动态算出专属面板并弹起
+    document.getElementById('btn-chat-emoji').onclick = (e) => {
+      e.stopPropagation();
+      document.getElementById('chat-input-more-menu').classList.add('hidden');
+      const menu = document.getElementById('chat-emoji-menu');
+      if (menu.classList.contains('hidden')) {
+          const availableGroups = getAvailableStickerGroups();
+          const groupsScroll = document.getElementById('chat-emoji-groups-scroll');
+          groupsScroll.innerHTML = '';
+          
+          if (availableGroups.length === 0) {
+              const hint = document.getElementById('chat-emoji-empty-hint');
+              hint.textContent = "暂无可用的表情包请前往设置添加";
+              hint.classList.remove('hidden');
+              document.getElementById('chat-emoji-grid').innerHTML = ''; // 清空栅格
+          } else {
+              // 自动默认选中可用项的第一项
+              if (!activeChatStickerGroup || !availableGroups.find(g => g.id === activeChatStickerGroup)) {
+                 activeChatStickerGroup = availableGroups[0].id;
+              }
+              // 渲染底下那一排切换图标（拿每个数组的第一张图做图标，或者弄个默认的背景）
+              availableGroups.forEach(g => {
+                 let iconUrl = g.stickers.length > 0 ? g.stickers[0].url : 'https://picsum.photos/100'; // 有图标就用图标
+                 groupsScroll.innerHTML += `
+                    <div class="h-8 w-8 rounded-md overflow-hidden bg-white/5 flex-shrink-0 cursor-pointer border ${g.id === activeChatStickerGroup ? 'border-blue-400 opacity-100' : 'border-transparent opacity-40 hover:opacity-80'}" onclick="event.stopPropagation(); switchChatEmojiTab('${g.id}')" title="${g.name}">
+                       <img src="${iconUrl}" class="w-full h-full object-cover">
+                    </div>
+                 `;
+              });
+              renderChatEmojiGrid(); // 刷新上方的方格展示
+          }
+          menu.classList.remove('hidden');
+      } else {
+          menu.classList.add('hidden');
+      }
+    };
+
+    window.switchChatEmojiTab = function(groupId) {
+       activeChatStickerGroup = groupId;
+       // 更新下方的蓝色框框聚焦
+       const groupsScroll = document.getElementById('chat-emoji-groups-scroll');
+       Array.from(groupsScroll.children).forEach(el => {
+          let clickStr = el.getAttribute('onclick');
+          if (clickStr.includes(groupId)) {
+             el.classList.add('border-blue-400', 'opacity-100');
+             el.classList.remove('border-transparent', 'opacity-40');
+          } else {
+             el.classList.remove('border-blue-400', 'opacity-100');
+             el.classList.add('border-transparent', 'opacity-40');
+          }
+       });
+       renderChatEmojiGrid();
+    };
+
+    function renderChatEmojiGrid() {
+      const grid = document.getElementById('chat-emoji-grid');
+      const hint = document.getElementById('chat-emoji-empty-hint');
+      const group = stickerGroups.find(g => g.id === activeChatStickerGroup);
+      
+      grid.innerHTML = '';
+      if (!group || group.stickers.length === 0) {
+         hint.classList.remove('hidden');
+         grid.appendChild(hint);
+      } else {
+         hint.classList.add('hidden');
+         group.stickers.forEach(s => {
+             // 点一下就直接作为图发出！并且拦截掉，因为存的是 url 所以需要走专用解析通道
+             grid.insertAdjacentHTML('beforeend', `
+                <div class="w-full aspect-square rounded overflow-hidden cursor-pointer hover:bg-white/10 p-1 flex items-center justify-center transition-colors group relative" onclick="sendStickerFromLibrary('${s.id}')">
+                   <img src="${s.url}" class="max-w-full max-h-full object-contain group-active:scale-90" title="${s.name}" />
+                </div>
+             `);
+         });
+      }
+    }
+
+    // 发图中枢（玩家端）
+    window.sendStickerFromLibrary = function(stickerId) {
+      if (!activeChatId) return;
+      const acc = getCurAcc();
+      let conv = acc.conversations.find(c => c.id === activeChatId);
+      if (!conv) return;
+
+      const group = stickerGroups.find(g => g.stickers.some(s => s.id === stickerId));
+      if (!group) return;
+      const sticker = group.stickers.find(s => s.id === stickerId);
+      
+      const now = new Date();
+      conv.messages.push({ 
+        id: 'msg-' + Date.now(),
+        senderId: currentMaskId, 
+        text: `[自定义表情包发出了]`, // 占位给后台看的
+        msgType: 'sticker',
+        stickerUrl: sticker.url,
+        time: now.getTime() 
+      });
+
+      conv.lastMsg = "[表情包]";
+      conv.time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      // 置顶最新会话
+      acc.conversations = acc.conversations.filter(c => c.id !== activeChatId);
+      acc.conversations.unshift(conv);
+
+      document.getElementById('chat-emoji-menu').classList.add('hidden');
+      renderMessages();
+      renderChatList();
+      
+      // AI响应一下
+      document.getElementById('btn-chat-leaf-reply').click();
+    };
+
+    // 2. 将表情包大库注入给 AI 的潜意识记忆中（修改 buildSystemPrompt 阶段）
+    const originalBuildSystemPrompt = buildSystemPrompt; // 拦截旧版本系统设定
+
+    // 重新定义我们自己更强版本的系统说明给大模型
+    buildSystemPrompt = function(role, isGroup) {
+       let oldPrompt = originalBuildSystemPrompt(role, isGroup); // 拿到原有的核心设定
+       
+       // 给 AI 看属于这个角色的私人“货架清单”
+       const availableStickers = stickerGroups.filter(g => g.authRoles.length === 0 || g.authRoles.includes(role.id));
+       if (availableStickers.length > 0) {
+          let stickerCatalog = "";
+          availableStickers.forEach(g => {
+             if (g.stickers.length > 0) {
+                const names = g.stickers.map(s => s.name).join('、');
+                stickerCatalog += `\n【${g.name} 组】：包含图库[${names}]。`;
+             }
+          });
+          
+          if (stickerCatalog) {
+             const aiStickerGuide = `\n【超极密：表情包权限库】你当前手机里收藏了以下真实的沙雕表情包，可以随时发出去砸人。
+清单如下：${stickerCatalog}
+- 当你在聊天时遇到对应的特定情感，想要发一张图时，必须、并且只需在段落末尾或者句子之后附带一个固定代码。
+- 代码格式必须严格为：[发表情包:此图的名称]。例如：如果对方生气了，你在【摸头杀组】里有“安慰”这张图，你就直接打出：别生气了[发表情包:安慰]。
+- 绝对不要编造库里面没有的表情名字！！`;
+             
+             oldPrompt += aiStickerGuide;
+          }
+       }
+       return oldPrompt;
+    };
+
+    // 3. AI 的回复拦截与渲染挂载（拦截核心触发函数，抽出代码并赋予魔力URL）
+    
+    // 【因为原生是用闭包写的匿名，我们需要在全球搜捕】这里我们只改 `triggerAiReply` 里解析文本的那一瞬间的逻辑，拦截所有带有正则的情景。
+    // 这意味着每当你点叶子键收到一长串话，我会偷偷把 AI 输入的那个框子抠下来贴成图片。
+    // 如果想要系统不报错且 100% 生效，我们修改它的解析正则！！
+    
+    const nativeTriggerCallAiReply = triggerAiReply; // 拿到原本 AI 的触发钩
+    // (在原来代码最顶部找 triggerAiReply 覆盖也可以，但我选择在渲染气泡前的最底层给它“披上大衣”)
+
+    const oldRenderMessages = renderMessages;
+    renderMessages = function() {
+       // 全局拦截一下，把带有“发表情”关键字的文字全部分装
+       const conv = getCurAcc().conversations.find(c => c.id === activeChatId);
+       if (conv && conv.messages) {
+          // 在渲染之前，做一次扫描换型
+          conv.messages.forEach(msg => {
+             if (msg.senderId !== currentMaskId && msg.senderId !== 'system' && msg.msgType === 'text') {
+                 // 如果这串文字里面带着 [发表情包:开心]
+                 const stickerMatch = msg.text.match(/\[发表情包[:：]\s*(.*?)\]/);
+                 if (stickerMatch) {
+                    const wantToUseName = stickerMatch[1].trim(); // 他想发“开心”
+                    // 去所有的分组里找
+                    let targetUrl = null;
+                    const ags = getAvailableStickerGroups();
+                    for (let g of ags) {
+                       let found = g.stickers.find(s => s.name.includes(wantToUseName) || wantToUseName.includes(s.name));
+                       if (found) { targetUrl = found.url; break; }
+                    }
+                    // 把类型直接篡解为 sticker
+                    if (targetUrl) {
+                       msg.msgType = 'sticker';
+                       msg.stickerUrl = targetUrl;
+                       msg.text = "[这是个不能显形的底层秘密]"; // 干掉这行刺眼的字
+                    }
+                 }
+             }
+          });
+       }
+       oldRenderMessages(); // 调用系统原有逻辑继续！
+    };
+    // ==========================================
+    // --- 极简桌面拍立得轮播引擎 ---
+    // ==========================================
+    let polaroidData = { photos: [], caption: "He died, and she knew.", interval: 5 };
+    let polaroidTimer = null;
+    let pCurrentIndex = 0;
+
+    // 核心渲染器，用来“瞬间切换”顶图和底图
+    window.updatePolaroidDisplay = function() {
+       const fgImg = document.getElementById('polaroid-fg-img');
+       const bgImg = document.getElementById('polaroid-bg-img');
+       const captionEl = document.getElementById('polaroid-caption-display');
+       
+       captionEl.textContent = polaroidData.caption || "He died, and she knew.";
+       
+       // 如果压根没有照片，彻底隐藏图片元素，露出我们的灰白色背景
+       if (!polaroidData.photos || polaroidData.photos.length === 0) {
+          fgImg.classList.add('hidden');
+          bgImg.classList.add('hidden');
+          return;
+       }
+       
+       // 只要有照片，就把第一张填上面
+       fgImg.classList.remove('hidden');
+       fgImg.src = polaroidData.photos[pCurrentIndex];
+       
+       // 如果有多张以上的照片，底下的照片就是下一张的内容
+       if (polaroidData.photos.length > 1) {
+          const nextIndex = (pCurrentIndex + 1) % polaroidData.photos.length;
+          bgImg.classList.remove('hidden');
+          bgImg.src = polaroidData.photos[nextIndex];
+       } else {
+          // 如果只有单张，下面也不需要露出别的照片
+          bgImg.classList.add('hidden');
+       }
+    };
+
+    function startPolaroidTimer() {
+       clearInterval(polaroidTimer);
+       if (polaroidData.photos && polaroidData.photos.length > 1) {
+          polaroidTimer = setInterval(() => {
+             pCurrentIndex = (pCurrentIndex + 1) % polaroidData.photos.length;
+             updatePolaroidDisplay(); // 因为你的要求是去除抽出动画，这里直接瞬间重渲染
+          }, polaroidData.interval * 1000);
+       }
+    }
+
+    // 防抖机制实现安全双击（增强容错版，带单指反馈）
+    // --- 回归被误删的组件设置弹窗函数 ---
+    function openPolaroidSettings() {
+       document.getElementById('input-polaroid-interval').value = polaroidData.interval || 5;
+       document.getElementById('input-polaroid-caption').value = polaroidData.caption || "He died, and she knew.";
+       renderPolaroidThumbs();
+       document.getElementById('polaroid-settings-modal').classList.remove('hidden');
+    }
+
+    // --- 修复版拍立得双重交互逻辑（脱离旧框架，不卡死） ---
+    let polaroidClickTimes = 0;
+    let polaroidClickTimer = null;
+
+    document.getElementById('widget-polaroid').onclick = (e) => {
+      e.preventDefault();
+      polaroidClickTimes++;
+      
+      if (polaroidClickTimes === 1) {
+        polaroidClickTimer = setTimeout(() => {
+          if (polaroidClickTimes === 1) {
+            // 单击进入：手动切换视图，避开系统崩溃
+            document.getElementById('desktop-view').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('darkroom-view').classList.remove('hidden');
+          }
+          polaroidClickTimes = 0;
+        }, 300);
+      } else {
+        // 双击打开设置
+        clearTimeout(polaroidClickTimer);
+        openPolaroidSettings();
+        polaroidClickTimes = 0;
+      }
+    };
+    
+    // 给系统加上原生双击保险，确保设置弹窗 100% 能出来
+    document.getElementById('widget-polaroid').ondblclick = (e) => {
+      e.preventDefault();
+      clearTimeout(polaroidClickTimer);
+      openPolaroidSettings();
+      polaroidClickTimes = 0;
+    };
+    // --- 以下是补回弹窗内部按钮的功能代码 ---
+    // 1. 上传图片按钮
+    document.getElementById('btn-polaroid-upload').onclick = () => {
+        document.getElementById('input-polaroid-file').click();
+    };
+
+    document.getElementById('input-polaroid-file').onchange = (e) => {
+       Array.from(e.target.files).forEach(file => {
+          const r = new FileReader();
+          r.onload = ev => {
+             if (!polaroidData.photos) polaroidData.photos = [];
+             polaroidData.photos.push(ev.target.result);
+             if (typeof renderPolaroidThumbs === 'function') renderPolaroidThumbs();
+          };
+          r.readAsDataURL(file);
+       });
+       e.target.value = ''; // 清空选择器，保证能重复传同名文件
+    };
+
+    // 2. 删除图片上的红色小叉叉
+    window.removePolaroidPhoto = function(idx) {
+       polaroidData.photos.splice(idx, 1);
+       if (typeof renderPolaroidThumbs === 'function') renderPolaroidThumbs();
+    };
+
+    // 3. 取消按钮
+    document.getElementById('btn-cancel-polaroid').onclick = () => {
+        document.getElementById('polaroid-settings-modal').classList.add('hidden');
+    };
+
+    // 4. 保存设置按钮
+    document.getElementById('btn-save-polaroid').onclick = () => {
+       polaroidData.interval = parseInt(document.getElementById('input-polaroid-interval').value) || 5;
+       polaroidData.caption = document.getElementById('input-polaroid-caption').value.trim();
+       pCurrentIndex = 0; 
+       
+       if (typeof updatePolaroidDisplay === 'function') updatePolaroidDisplay();
+       if (typeof startPolaroidTimer === 'function') startPolaroidTimer();
+       
+       document.getElementById('polaroid-settings-modal').classList.add('hidden');
+       
+       // 保存到系统数据库
+       if(typeof db !== 'undefined' && !isResetting) {
+          saveArchive({ id: 'auto-save', name: '自动存档', time: new Date().toLocaleString('zh-CN'), data: getCurrentSaveData() });
+       }
+    };
+    
+    // 独立初始化：就算刚清空了档案，也能保证立刻长出拍立得的灰色骨架
+    setTimeout(updatePolaroidDisplay, 200);
+
+    // 渲染设置面板里的小缩略图
+    function renderPolaroidThumbs() {
+       const list = document.getElementById('polaroid-photo-list');
+       list.innerHTML = '';
+       if(!polaroidData.photos || polaroidData.photos.length === 0){
+         list.innerHTML = '<p class="text-[10px] opacity-40 mx-auto text-white mt-1">未上传照片，组件将呈现灰白状态</p>';
+         return;
+       }
+       polaroidData.photos.forEach((p, idx) => {
+          list.insertAdjacentHTML('beforeend', `
+             <div class="relative w-14 h-14 flex-shrink-0 group rounded overflow-hidden shadow-inner">
+                <img src="${p}" class="w-full h-full object-cover" />
+                <div onclick="removePolaroidPhoto(${idx})" class="absolute top-0 right-0 bg-red-500 w-5 h-5 flex items-center justify-center rounded-bl cursor-pointer opacity-80 hover:opacity-100">
+                   <i data-lucide="x" class="w-3 h-3 text-white"></i>
+                </div>
+             </div>
+          `);
+       });
+       lucide.createIcons();
+    }
+
+    window.removePolaroidPhoto = function(idx) {
+       polaroidData.photos.splice(idx, 1);
+       renderPolaroidThumbs();
+    };
+
+    // 上传图片处理转 base64
+    document.getElementById('btn-polaroid-upload').onclick = () => document.getElementById('input-polaroid-file').click();
+    document.getElementById('input-polaroid-file').onchange = (e) => {
+       Array.from(e.target.files).forEach(file => {
+          const r = new FileReader();
+          r.onload = ev => {
+             if (!polaroidData.photos) polaroidData.photos = [];
+             polaroidData.photos.push(ev.target.result);
+             renderPolaroidThumbs();
+          };
+          r.readAsDataURL(file);
+       });
+       e.target.value = ''; // 清空选择器内容以便下一次同文件名还能点
+    };
+
+    // 弹窗按键保存逻辑
+    document.getElementById('btn-cancel-polaroid').onclick = () => document.getElementById('polaroid-settings-modal').classList.add('hidden');
+    document.getElementById('btn-save-polaroid').onclick = () => {
+       polaroidData.interval = parseInt(document.getElementById('input-polaroid-interval').value) || 5;
+       polaroidData.caption = document.getElementById('input-polaroid-caption').value.trim();
+       pCurrentIndex = 0; // 保存后强行切回第一张
+       updatePolaroidDisplay();
+       startPolaroidTimer();
+       document.getElementById('polaroid-settings-modal').classList.add('hidden');
+       
+       // 触发全局数据库瞬间存档，永久固化照片！
+       if(db && !isResetting) {
+          saveArchive({ id: 'auto-save', name: '自动存档', time: new Date().toLocaleString('zh-CN'), data: getCurrentSaveData() });
+       }
+    };
 
     // --- 新增：通过拦截多指滑动，彻底干掉苹果 Safari 的双指放大 ---
     document.addEventListener('touchmove', function(event) {
@@ -13061,6 +14089,110 @@ refreshChatApp = function() {
         event.preventDefault(); // 发现两根手指以上在屏幕上，立刻切断动作信号
       }
     }, { passive: false });
+    // ==========================================
+    // --- Darkroom 美化引擎核心函数 ---
+    // ==========================================
+
+    // 1. 应用数据到系统
+    function applyDarkroomData() {
+      // 应用壁纸
+      if (darkroomData.wallpaper) {
+        document.getElementById('main-wallpaper-img').src = darkroomData.wallpaper;
+      }
+      // 应用自定义 CSS
+      document.getElementById('custom-bubble-style').textContent = darkroomData.bubbleCss;
+      document.getElementById('input-bubble-css').value = darkroomData.bubbleCss;
+    }
+
+    // 2. 界面切换 (独立修复版)
+    document.getElementById('btn-close-darkroom').onclick = () => {
+      document.getElementById('darkroom-view').classList.add('hidden');
+      document.getElementById('desktop-view').classList.remove('opacity-0', 'pointer-events-none');
+    };
+
+    // 3. 上传图片中转站
+    let drUploadMode = ''; // 'wallpaper', 'chatGlobal', 'chatContact'
+    window.triggerDarkroomUpload = (mode) => {
+      drUploadMode = mode;
+      document.getElementById('darkroom-file-input').click();
+    };
+
+    document.getElementById('darkroom-file-input').onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target.result;
+        if (drUploadMode === 'wallpaper') {
+          darkroomData.wallpaper = base64;
+        } else if (drUploadMode === 'chatGlobal') {
+          darkroomData.globalChatBg = base64;
+          alert('全局聊天背景已更新');
+        } else if (drUploadMode === 'chatContact') {
+          if (drSelectedContactId) {
+            darkroomData.contactChatBgs[drSelectedContactId] = base64;
+            alert('该联系人的专属背景已更新');
+          }
+        }
+        applyDarkroomData();
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // 4. 选择联系人逻辑
+    let drSelectedContactId = null;
+    window.pickContactForDarkroom = () => {
+      const listContainer = document.getElementById('single-chat-list');
+      listContainer.innerHTML = '';
+      const acc = getCurAcc();
+      if (acc.contacts.length === 0) return alert("请先在 Chat 里添加联系人");
+      
+      acc.contacts.forEach(c => {
+         const div = document.createElement('div');
+         div.className = "flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10";
+         div.innerHTML = `<img src="${c.avatar}" class="w-10 h-10 rounded-full object-cover" /><span class="flex-1 text-sm font-bold text-white">${c.name}</span>`;
+         div.onclick = () => {
+           drSelectedContactId = c.id;
+           document.getElementById('dr-selected-name').textContent = `已选: ${c.name}`;
+           document.getElementById('dr-contact-area').classList.remove('hidden');
+           document.getElementById('chat-single-modal').classList.add('hidden');
+         };
+         listContainer.appendChild(div);
+      });
+      document.getElementById('chat-single-modal').classList.remove('hidden');
+    };
+
+    // 5. 保存并生效
+    document.getElementById('btn-save-darkroom').onclick = () => {
+      darkroomData.bubbleCss = document.getElementById('input-bubble-css').value.trim();
+      applyDarkroomData();
+      alert('所有美化修改已保存！');
+      // 触发一次自动存档
+      if (db && !isResetting) {
+        saveArchive({ id: 'auto-save', name: '自动存档', time: new Date().toLocaleString('zh-CN'), data: getCurrentSaveData() });
+      }
+    };
+
+    // 6. 重写聊天窗口打开函数 (注入动态背景切换)
+    const originalOpenChatDetail = openChatDetail;
+    openChatDetail = function(targetId) {
+      // 执行原有的打开界面代码
+      originalOpenChatDetail(targetId);
+      
+      const detailView = document.getElementById('chat-detail-view');
+      // 优先检查单人背景，其次检查全局背景
+      const customBg = darkroomData.contactChatBgs[targetId] || darkroomData.globalChatBg;
+      
+      if (customBg) {
+        detailView.style.backgroundImage = `url('${customBg}')`;
+        detailView.style.backgroundSize = 'cover';
+        detailView.style.backgroundPosition = 'center';
+        detailView.classList.remove('glass'); // 移除默认的毛玻璃效果以免重叠
+      } else {
+        detailView.style.backgroundImage = 'none';
+        detailView.classList.add('glass'); // 恢复玻璃背景
+      }
+    };
 </script>
 </body>
 </html>
