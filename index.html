@@ -545,12 +545,9 @@
             </div>
           </div>
           
-          <!-- 预留的软件槽位（占1格，保持前面的 Bank 不动） -->
-          <div class="col-span-1"></div>
-
           <!-- 新增：拍立得组件 -->
-          <!-- 修改点：添加 pr-6 预留右侧安全防切掉内边距，同时移除原先强制偏左的 ml-4 -->
-          <div class="col-span-2 pr-6">
+          <!-- 修改点：占据3格(col-span-3)，并大幅增加右侧(pr-8)和底部(pb-10)的留白安全区，防止各品牌手机屏幕把倾斜的照片切断 -->
+          <div class="col-span-3 pl-2 pr-8 pb-10 pt-2">
             <div id="widget-polaroid" class="widget-polaroid-container w-full active:scale-[0.98] transition-transform">
               <!-- 底层照片 (露出边缘) -->
               <div class="widget-polaroid-back">
