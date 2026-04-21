@@ -535,13 +535,22 @@
         <h2 class="text-xl font-bold text-white/80 ml-2"></h2>
         <!-- 软件网格 -->
         <div class="grid grid-cols-4 gap-y-6 gap-x-4 px-2">
-          <!-- Bank 软件 -->
-          <div class="col-span-1 self-start flex justify-center">
+          <!-- Bank 和 剧场 软件列 -->
+          <div class="col-span-1 self-start flex flex-col items-center gap-6 pt-2">
+            <!-- Bank 软件 -->
             <div id="btn-open-bank" class="app-icon flex flex-col items-center gap-1.5 cursor-pointer">
               <div class="w-14 h-14 bg-gradient-to-br from-gray-800 to-black rounded-2xl flex items-center justify-center shadow-lg border border-white/10">
                 <i data-lucide="landmark" class="w-8 h-8 text-yellow-500/80"></i>
               </div>
               <span class="text-[10px] font-medium">Bank</span>
+            </div>
+            
+            <!-- 剧场 软件 -->
+            <div id="btn-open-theater" class="app-icon flex flex-col items-center gap-1.5 cursor-pointer">
+              <div class="w-14 h-14 bg-gradient-to-br from-red-700 to-[#2a0808] rounded-2xl flex items-center justify-center shadow-[0_5px_15px_rgba(229,9,20,0.4)] border border-[#ffd700]/30 hover:shadow-[0_8px_25px_rgba(229,9,20,0.6)] transition-shadow">
+                <i data-lucide="clapperboard" class="w-8 h-8 text-[#ffd700]/90"></i>
+              </div>
+              <span class="text-[10px] font-medium text-white/90 tracking-widest text-[#ffd700]">剧场</span>
             </div>
           </div>
           
@@ -2270,6 +2279,275 @@
       <button id="btn-enter-sudden-event" class="mt-2 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-xs font-bold transition-colors">点击前往场景</button>
     </div>
   </div>
+  <!-- 剧场 软件主界面 (百老汇复古光影风) -->
+  <div id="theater-view" class="absolute inset-0 z-30 flex flex-col hidden overflow-hidden bg-black font-serif">
+    
+    <!-- 全局背景层：天鹅绒与聚光灯光影效果 -->
+    <div class="absolute inset-0 z-0 pointer-events-none">
+      <!-- 基础幕布深红色调 -->
+      <div class="absolute inset-0 bg-gradient-to-b from-[#2a0808] via-[#0f0404] to-black opacity-80"></div>
+      <!-- 顶部聚光灯光晕 -->
+      <div class="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[150%] h-[60%] bg-[radial-gradient(ellipse_at_top,rgba(255,230,150,0.15),transparent_70%)] pointer-events-none"></div>
+      <div class="absolute -top-[10%] left-[20%] w-[40%] h-[80%] bg-[radial-gradient(ellipse_at_top,rgba(255,100,100,0.1),transparent_50%)] rotate-12 pointer-events-none blur-2xl"></div>
+      <!-- 老胶片噪点/颗粒感叠加 (极低透明度) -->
+      <div class="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');"></div>
+    </div>
+
+    <!-- 顶部标题栏 (双语+电影票根设计) -->
+    <div class="relative z-10 pt-12 px-6 flex items-start justify-between border-b border-[#ffd700]/20 pb-4 bg-black/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+      <button id="btn-close-theater" class="p-2 -ml-2 text-[#ffd700]/60 hover:text-[#ffd700] transition-colors"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+      
+      <!-- 标题排版：大英文 + 小中文 -->
+      <div class="flex flex-col items-center">
+        <h1 class="text-xl font-black tracking-[0.3em] text-[#ffd700] uppercase drop-shadow-[0_2px_4px_rgba(255,215,0,0.3)]">Now Playing</h1>
+        <div class="flex items-center gap-2 mt-1 opacity-60">
+          <div class="w-4 h-px bg-[#ffd700]"></div>
+          <span class="text-[9px] tracking-[0.2em] text-[#ffd700]">虚拟剧场</span>
+          <div class="w-4 h-px bg-[#ffd700]"></div>
+        </div>
+      </div>
+      
+      <div class="w-8"></div><!-- 占位平衡 -->
+      
+      <!-- 底部的双排虚线装饰，模拟票根边缘 -->
+      <div class="absolute bottom-0 left-0 right-0 h-1 border-b border-dashed border-[#ffd700]/20"></div>
+    </div>
+    
+    <!-- 核心滚动与内容区域 -->
+    <div class="flex-1 overflow-y-auto pb-32 relative z-10">
+      
+      <!-- [1] 发现界面 (默认可见) -->
+      <div id="theater-tab-discover" class="w-full flex-col pt-6 px-6 flex">
+        
+        <div class="mb-8 pl-1">
+           <h2 class="text-xs font-bold text-[#ffd700]/60 tracking-[0.3em] uppercase mb-1">New Production</h2>
+           <p class="text-[9px] text-white/20 tracking-widest">点击下方剧本堆叠，开始策划你的下一场演出</p>
+        </div>
+        
+        <!-- 书架容器 (网格排列) -->
+        <div id="theater-bookshelf" class="grid grid-cols-3 gap-x-5 gap-y-8">
+          <!-- 空白添加书本 (剧本稿件风) -->
+          <div id="btn-open-theater-setup" class="flex flex-col items-center gap-3 cursor-pointer group">
+            <div class="w-full aspect-[2/3] rounded-sm relative bg-[#1a1a1a] shadow-[5px_5px_15px_rgba(0,0,0,0.8),inset_-1px_-1px_3px_rgba(255,255,255,0.05)] border border-[#ffd700]/10 flex flex-col justify-center items-center group-hover:bg-[#222] group-hover:border-[#ffd700]/30 transition-all group-active:scale-95">
+              <div class="absolute left-1 top-0 bottom-0 w-0.5 bg-black/40 shadow-[1px_0_0_rgba(255,215,0,0.1)]"></div>
+              <div class="w-10 h-10 rounded-full border border-[#ffd700]/20 flex items-center justify-center mb-2 group-hover:border-[#ffd700]/50 group-hover:shadow-[0_0_10px_rgba(255,215,0,0.2)]">
+                <i data-lucide="plus" class="w-5 h-5 text-[#ffd700]/50 group-hover:text-[#ffd700]"></i>
+              </div>
+              <span class="text-[8px] tracking-[0.2em] uppercase text-[#ffd700]/40 font-bold max-w-[80%] text-center leading-tight">Project<br>Director</span>
+            </div>
+            <span class="text-[10px] text-white/40 tracking-wider">筹划新作</span>
+          </div>
+        </div>
+
+        <!-- 👇折叠式谢幕画廊 (挂载在筹划新作下方) -->
+        <div class="mt-12 w-full">
+          <div class="flex justify-between items-center cursor-pointer pl-2 border-l-2 border-pink-500/40 opacity-80 hover:opacity-100 transition-opacity" id="btn-toggle-theater-gallery">
+            <div>
+              <h2 class="text-xs font-bold text-pink-500/80 tracking-[0.3em] uppercase">Encore Gallery</h2>
+              <p class="text-[9px] text-white/30 tracking-widest mt-0.5">你的所有正式演出记录与片酬勋章</p>
+            </div>
+            <i data-lucide="chevron-down" id="theater-gallery-arrow" class="w-5 h-5 text-pink-500/60 transition-transform"></i>
+          </div>
+          
+          <div id="theater-gallery-list" class="flex flex-col gap-4 mt-4 hidden">
+             <!-- 历史演出票根将由 JS 渲染在这里 -->
+             <p class="text-center text-[10px] opacity-20 py-10 italic">尚未有谢幕记录...</p>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- [2] 我的界面 (后台更衣室星形门牌风) -->
+      <div id="theater-tab-me" class="w-full flex-col pt-8 px-6 hidden relative">
+        <div class="mb-4 pl-2 border-l-2 border-[#ffd700]/40">
+           <h2 class="text-xs font-bold text-[#ffd700]/80 tracking-[0.3em] uppercase">Director's Room</h2>
+           <p class="text-[9px] text-white/30 tracking-widest mt-0.5">个人档案</p>
+        </div>
+
+        <!-- 个人名片 -->
+        <div class="flex items-center gap-5 p-6 rounded-xl bg-gradient-to-b from-[#1f1a1a] to-black border border-[#ffd700]/20 shadow-[0_20px_40px_rgba(0,0,0,0.9)] relative overflow-hidden">
+          <i data-lucide="star" class="absolute -right-4 -bottom-4 w-24 h-24 text-[#ffd700]/5 -rotate-12 fill-[#ffd700]/10"></i>
+          
+          <div class="relative w-16 h-16 rounded-full flex-shrink-0 z-10">
+            <div class="absolute inset-[-4px] rounded-full border border-dashed border-[#ffd700]/40 animate-[spin_20s_linear_infinite]"></div>
+            <img id="theater-my-avatar" src="" class="absolute inset-0 w-full h-full rounded-full object-cover border-2 border-black" />
+          </div>
+          
+          <div class="flex flex-col z-10">
+            <span id="theater-my-name" class="text-lg font-black text-white/90 mb-1 tracking-wide">加载中...</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[8px] bg-[#ffd700]/20 text-[#ffd700] px-1.5 py-0.5 rounded uppercase tracking-widest font-bold">Leading Actor</span>
+              <span class="text-[9px] text-white/40">主演面具</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> 
+    <!-- [3] 剧目筹备中心弹窗 -->
+    <div id="theater-setup-modal" class="absolute inset-0 z-[60] bg-black/90 backdrop-blur-xl flex items-center justify-center px-6 hidden">
+      <div class="bg-[#111] border border-[#ffd700]/30 rounded-[2rem] p-6 w-full max-w-sm flex flex-col gap-5 shadow-[0_0_50px_rgba(255,215,0,0.1)] anim-scale-in max-h-[85vh] overflow-y-auto">
+        <h2 class="text-center font-black text-[#ffd700] text-xl tracking-[0.2em] uppercase">Production Setup</h2>
+        
+        <!-- 剧本名称 -->
+        <div>
+          <label class="text-[10px] text-[#ffd700]/50 uppercase tracking-widest ml-1 mb-2 block">Play Title / 剧目名称</label>
+          <input type="text" id="setup-theater-title" placeholder="输入你的剧名 (例如: 霍格沃茨的午后)" class="w-full bg-black border border-[#ffd700]/20 rounded-xl px-4 py-3 text-sm text-white outline-none" />
+        </div>
+
+        <!-- 剧本类型 -->
+        <div>
+          <label class="text-[10px] text-[#ffd700]/50 uppercase tracking-widest ml-1 mb-2 block">Genre / 剧本类型</label>
+          <select id="setup-theater-genre" class="w-full bg-black border border-[#ffd700]/20 rounded-xl px-4 py-3 text-sm text-[#ffd700] outline-none appearance-none">
+            <option value="悬疑推理">悬疑推理</option>
+            <option value="浪漫言情">浪漫言情</option>
+            <option value="热血冒险">热血冒险</option>
+            <option value="古风仙侠">古风仙侠</option>
+            <option value="赛博朋克">赛博朋克</option>
+            <option value="无限流">无限流</option>
+            <option value="日常治愈">日常治愈</option>
+          </select>
+        </div>
+
+        <!-- 背景时代 -->
+        <div>
+          <label class="text-[10px] text-[#ffd700]/50 uppercase tracking-widest ml-1 mb-2 block">Era / 背景时代</label>
+          <select id="setup-theater-era" class="w-full bg-black border border-[#ffd700]/20 rounded-xl px-4 py-3 text-sm text-[#ffd700] outline-none appearance-none">
+            <option value="当代现实 (21世纪现代生活)">当代现实 (21世纪现代生活)</option>
+            <option value="民国(动荡与新思潮)">民国(动荡与新思潮)</option>
+            <option value="上古典籍 (诸神与洪荒时代)">上古典籍 (诸神与洪荒时代)</option>
+            <option value="先秦遗风 (纵横捭阖与列国战争)">先秦遗风 (纵横捭阖与列国战争)</option>
+            <option value="汉宫春色 (儒术独尊与汉风雄健)">汉宫春色 (儒术独尊与汉风雄健)</option>
+            <option value="盛唐气象 (开放包容与万国来朝)">盛唐气象 (开放包容与万国来朝)</option>
+            <option value="两宋文韵 (崇文抑武与市井繁华)">两宋文韵 (崇文抑武与市井繁华)</option>
+            <option value="明制风骨 (内敛刚硬与市井世俗)">明制风骨 (内敛刚硬与市井世俗)</option>
+            <option value="维多利亚时代 (蒸汽机与长夜迷雾)">维多利亚时代 (蒸汽机与长夜迷雾)</option>
+            <option value="中世纪 (领主、教廷与黑死病)">中世纪 (领主、教廷与黑死病)</option>
+            <option value="近未来 (高科技与赛博城邦)">近未来 (高科技与赛博城邦)</option>
+          </select>
+        </div>
+
+        <!-- 参演角色 -->
+        <div>
+          <label class="text-[10px] text-[#ffd700]/50 uppercase tracking-widest ml-1 mb-2 block">Cast / 选择搭档</label>
+          <div id="setup-theater-cast-list" class="w-full max-h-32 overflow-y-auto bg-black/40 rounded-xl p-2 border border-[#ffd700]/10 flex flex-col gap-1">
+            <!-- 勾选列表由 JS 渲染 -->
+          </div>
+          <p class="text-[8px] text-white/30 mt-1 ml-1">* 不勾选则为独角戏模式</p>
+        </div>
+
+        <!-- 自定义背景 -->
+        <div>
+          <label class="text-[10px] text-[#ffd700]/50 uppercase tracking-widest ml-1 mb-2 block">Stage Directions / 舞台大纲 (可选)</label>
+          <textarea id="setup-theater-background" class="w-full h-24 bg-black border border-[#ffd700]/20 rounded-xl p-3 text-xs text-white/80 outline-none resize-none" placeholder="输入你想扮演的具体章节或详细设定，留空则由 AI 自由主导开场..."></textarea>
+        </div>
+
+        <div class="border-t border-[#ffd700]/10 pt-4">
+          <p class="text-[#ffd700] text-[10px] italic text-center mb-4 opacity-80">💡 提示：演出采用剧本对话格式。你可以使用 (...) 括号来书写舞台指示或改变环境。</p>
+          <div class="flex gap-3">
+            <button id="btn-cancel-theater-setup" class="flex-1 py-3 rounded-xl bg-white/5 text-white/50 text-sm font-bold">取消</button>
+            <button id="btn-start-theater-performance" class="flex-1 py-3 rounded-xl bg-[#ffd700] text-black text-sm font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,215,0,0.4)] active:scale-95 transition-transform">正式开演</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- [4] 沉浸式舞台 (演出界面) -->
+    <div id="theater-stage-view" class="absolute inset-0 z-[70] bg-black flex flex-col hidden overflow-hidden">
+      <!-- 顶部舞台控制 -->
+      <div class="relative z-10 pt-12 px-6 flex items-center justify-between border-b border-white/5 pb-4 bg-black/40 backdrop-blur-md">
+        <div class="flex flex-col">
+          <h2 id="stage-play-title" class="text-sm font-black text-[#ffd700] tracking-widest uppercase">Now Performing</h2>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span id="stage-genre-badge" class="text-[8px] bg-white/10 text-white/60 px-1.5 py-0.5 rounded">类型</span>
+            <span id="stage-timer" class="text-[9px] font-mono text-red-500 font-bold tracking-tighter">00:00:00</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-theater-pause" class="px-3 py-1.5 bg-white/10 text-white/60 border border-white/20 rounded-full text-[10px] font-black uppercase tracking-[0.1em] hover:bg-white/20 transition-colors">休息 Pause</button>
+          <button id="btn-theater-curtain-call" class="px-3 py-1.5 bg-red-600/20 text-red-500 border border-red-500/30 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">谢幕 End</button>
+        </div>
+      </div>
+      
+      <!-- 对白滚动区 -->
+      <div id="stage-messages-container" class="flex-1 overflow-y-auto p-6 flex flex-col gap-6 font-sans">
+        <!-- 剧本台词将渲染在这里 -->
+      </div>
+      
+      <!-- 底部台词输入 -->
+      <div class="p-6 bg-black/60 border-t border-white/5 backdrop-blur-xl relative z-10">
+        <div class="flex gap-3">
+          <textarea id="stage-input" rows="1" class="flex-1 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white/90 outline-none resize-none focus:border-[#ffd700]/40 transition-colors" placeholder="按回车发送台词，按叶子键推进剧情..."></textarea>
+          <button id="btn-stage-leaf" title="推进剧情" class="w-12 h-12 bg-gradient-to-b from-[#8B0000] to-[#400000] border border-[#ffd700] rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(255,215,0,0.3)] active:scale-95 transition-transform hover:scale-105"><i data-lucide="leaf" class="w-6 h-6 text-[#ffd700]"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- [5] 谢幕结算海报 -->
+    <div id="theater-settlement-modal" class="absolute inset-0 z-[80] bg-black/95 backdrop-blur-3xl flex items-center justify-center px-6 hidden">
+      <div class="w-full max-w-sm bg-[#111] border-[1px] border-[#ffd700]/40 rounded-sm p-8 shadow-2xl relative overflow-hidden flex flex-col items-center anim-scale-in">
+        <!-- 票根齿轮装饰 -->
+        <div class="absolute -top-4 left-1/2 -translate-x-1/2 w-2/3 h-8 border-b-2 border-dashed border-[#ffd700]/20"></div>
+        <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-2/3 h-8 border-t-2 border-dashed border-[#ffd700]/20"></div>
+        
+        <i data-lucide="star" class="w-12 h-12 text-[#ffd700] mb-4 opacity-80"></i>
+        <h2 class="text-[#ffd700] font-black tracking-[0.5em] text-lg uppercase mb-1">Final Curtain</h2>
+        <p class="text-[9px] text-[#ffd700]/40 tracking-widest mb-8">演出完美谢幕</p>
+        
+        <div class="w-full space-y-5 border-y border-[#ffd700]/10 py-6 mb-8 mt-2">
+           <div class="flex justify-between items-baseline">
+             <span class="text-[10px] text-white/30 uppercase tracking-widest">Production</span>
+             <span id="settle-play-title" class="text-sm font-bold text-white">剧名</span>
+           </div>
+           <div class="flex justify-between items-baseline">
+             <span class="text-[10px] text-white/30 uppercase tracking-widest">Performance</span>
+             <span id="settle-duration" class="text-sm font-mono text-white">00:00</span>
+           </div>
+           <div class="flex justify-between items-baseline">
+             <span class="text-[10px] text-white/30 uppercase tracking-widest">Scripts / 字数</span>
+             <span id="settle-words" class="text-sm font-mono text-white">0</span>
+           </div>
+           <div class="flex justify-between items-baseline pt-2">
+             <span class="text-[10px] text-[#ffd700] font-bold uppercase tracking-[0.2em]">Salary / 劳务费</span>
+             <span id="settle-amount" class="text-xl font-black text-[#ffd700]">¥0.00</span>
+           </div>
+        </div>
+        
+        <button id="btn-collect-salary" class="w-full py-5 bg-[#ffd700] text-black font-black uppercase tracking-[0.4em] rounded-sm shadow-[0_10px_20px_rgba(255,215,0,0.2)] active:scale-95 transition-all">领取片酬入账</button>
+      </div>
+    </div>
+    <!-- [6] 演出剧本回顾弹窗 (新加) -->
+    <div id="theater-review-modal" class="absolute inset-0 z-[90] bg-black/95 backdrop-blur-md flex flex-col hidden overflow-hidden font-serif">
+      <div class="relative z-10 pt-12 px-6 flex items-center justify-between border-b border-[#ffd700]/20 pb-4 bg-black/60 shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+        <button onclick="document.getElementById('theater-review-modal').classList.add('hidden')" class="p-2 -ml-2 text-[#ffd700]/60 hover:text-[#ffd700] transition-colors"><i data-lucide="chevron-down" class="w-6 h-6"></i></button>
+        <h2 id="review-play-title" class="text-sm font-black text-[#ffd700] tracking-widest uppercase">剧目回顾</h2>
+        <div class="w-8"></div>
+      </div>
+      <div id="review-messages-container" class="flex-1 overflow-y-auto p-6 flex flex-col gap-6"></div>
+    </div>
+
+    <!-- 底部导航栏 (打板器霓虹质感) -->
+    <div class="absolute bottom-6 left-6 right-6 h-[72px] bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-[0_-5px_30px_rgba(0,0,0,0.8),inset_0_1px_rgba(255,255,255,0.05)] flex items-center justify-around px-2 z-40">
+      <button data-tab="discover" class="theater-nav-btn relative flex flex-col items-center justify-center w-20 h-full group text-[#e50914] opacity-100">
+        <div class="nav-glow absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(229,9,20,0.2),transparent_60%)] opacity-100 transition-opacity"></div>
+        <i data-lucide="search-check" class="w-5 h-5 mb-1 relative z-10 drop-shadow-[0_0_8px_rgba(229,9,20,0.6)] nav-icon"></i>
+        <div class="flex flex-col items-center relative z-10">
+          <span class="text-[8px] font-bold tracking-widest uppercase font-sans">Explore</span>
+          <span class="text-[8px] scale-75 opacity-70">发现</span>
+        </div>
+      </button>
+      
+      <div class="w-px h-8 bg-white/5 mx-2"></div>
+
+      <button data-tab="me" class="theater-nav-btn relative flex flex-col items-center justify-center w-20 h-full group opacity-40 text-white hover:opacity-80 transition-all">
+        <div class="nav-glow absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(229,9,20,0.2),transparent_60%)] opacity-0 transition-opacity"></div>
+        <i data-lucide="scan-face" class="w-5 h-5 mb-1 relative z-10 transition-colors nav-icon"></i>
+        <div class="flex flex-col items-center relative z-10">
+          <span class="text-[8px] font-bold tracking-widest uppercase font-sans transition-colors">Profile</span>
+          <span class="text-[8px] scale-75 opacity-70 transition-colors">我的</span>
+        </div>
+      </button>
+    </div>
+  </div>
   <!-- Bank 软件主界面 -->
   <div id="bank-view" class="absolute inset-0 z-30 bg-gradient-to-b from-[#111111] to-black flex flex-col hidden">
     <div class="pt-12 px-6 flex items-center justify-between">
@@ -2675,6 +2953,12 @@
       cities: [],
       locations: []
     };
+    let theaterHistory = []; 
+    let currentProduction = null; 
+    let stageMessages = []; 
+    let stageTimerInterval = null;
+    let stageSeconds = 0;
+    let userStageWords = 0;
     let currentMapLevel = 'country'; // 'country', 'city', 'location'
     let currentMapParentId = null;
     let isMapEditMode = false;
@@ -2922,6 +3206,7 @@ let currentStickerGroupId = ""; // 管理界面当前选中组
     // 视图切换
    const views = {
       desktop: document.getElementById('desktop-view'),
+      theaterStage: document.getElementById('theater-stage-view'),
       call: document.getElementById('call-view'),
       settings: document.getElementById('settings-view'),
       charSelection: document.getElementById('char-selection-view'),
@@ -2936,6 +3221,7 @@ let currentStickerGroupId = ""; // 管理界面当前选中组
       memory: document.getElementById('memory-view'),
       music: document.getElementById('music-view'),
       musicPlayer: document.getElementById('music-player-view'),
+      theater: document.getElementById('theater-view'),
       bank: document.getElementById('bank-view'),
       bankAsset: document.getElementById('bank-asset-view'),
       playlistDetail: document.getElementById('playlist-detail-view'),
@@ -3068,6 +3354,86 @@ let currentStickerGroupId = ""; // 管理界面当前选中组
     };
     
     document.getElementById('btn-back-from-asset').onclick = () => showView('bank');
+
+    // ==========================================
+    // --- 剧场 软件逻辑 (带光影互动特效) ---
+    // ==========================================
+    
+    // 打开剧场软件
+    document.getElementById('btn-open-theater').onclick = () => {
+      // 默认重置为第一页 (激活红光)
+      document.querySelectorAll('.theater-nav-btn').forEach(b => {
+        b.classList.add('opacity-40', 'text-white'); 
+        b.classList.remove('text-[#e50914]', 'opacity-100');
+        const glow = b.querySelector('.nav-glow');
+        if(glow) glow.classList.replace('opacity-100', 'opacity-0');
+        const icon = b.querySelector('.nav-icon');
+        if(icon) icon.classList.remove('drop-shadow-[0_0_8px_rgba(229,9,20,0.6)]');
+
+        if (b.dataset.tab === 'discover') {
+          b.classList.remove('opacity-40', 'text-white'); 
+          b.classList.add('text-[#e50914]', 'opacity-100');
+          if(glow) glow.classList.replace('opacity-0', 'opacity-100');
+          if(icon) icon.classList.add('drop-shadow-[0_0_8px_rgba(229,9,20,0.6)]');
+        }
+      });
+      document.getElementById('theater-tab-discover').classList.remove('hidden');
+      document.getElementById('theater-tab-discover').classList.add('flex');
+      document.getElementById('theater-tab-me').classList.add('hidden');
+      document.getElementById('theater-tab-me').classList.remove('flex');
+      
+      showView('theater');
+      lucide.createIcons(); // 刷新渲染新出来的电影图标
+    };
+
+    // 返回桌面
+    document.getElementById('btn-close-theater').onclick = () => {
+      showView('desktop');
+    };
+
+    // 剧场内部：霓虹发光与切页切换逻辑
+    const theaterNavBtns = document.querySelectorAll('.theater-nav-btn');
+    theaterNavBtns.forEach(btn => {
+      btn.onclick = () => {
+        const targetTab = btn.dataset.tab;
+        
+        // 1. 拆除所有的红光
+        theaterNavBtns.forEach(b => { 
+            b.classList.add('opacity-40', 'text-white'); 
+            b.classList.remove('text-[#e50914]', 'opacity-100'); 
+            const glow = b.querySelector('.nav-glow');
+            if(glow) glow.classList.replace('opacity-100', 'opacity-0');
+            const icon = b.querySelector('.nav-icon');
+            if(icon) icon.classList.remove('drop-shadow-[0_0_8px_rgba(229,9,20,0.6)]');
+        });
+        
+        // 2. 点亮当前按钮的红光
+        btn.classList.remove('opacity-40', 'text-white'); 
+        btn.classList.add('text-[#e50914]', 'opacity-100');
+        const activeGlow = btn.querySelector('.nav-glow');
+        if(activeGlow) activeGlow.classList.replace('opacity-0', 'opacity-100');
+        const activeIcon = btn.querySelector('.nav-icon');
+        if(activeIcon) activeIcon.classList.add('drop-shadow-[0_0_8px_rgba(229,9,20,0.6)]');
+        
+        // 3. 隐藏并切换界面
+        document.getElementById('theater-tab-discover').classList.add('hidden');
+        document.getElementById('theater-tab-discover').classList.remove('flex');
+        document.getElementById('theater-tab-me').classList.add('hidden');
+        document.getElementById('theater-tab-me').classList.remove('flex');
+        
+        const targetEl = document.getElementById(`theater-tab-${targetTab}`);
+        targetEl.classList.remove('hidden');
+        targetEl.classList.add('flex');
+        
+        // 4. 信息抓取：如果是“我的”界面，立刻去抓取用户的虚拟面具档案
+        if (targetTab === 'me') {
+          const curMask = masks.find(m => m.id === currentMaskId) || { name: '未选择面具', avatar: 'https://iili.io/BoXEHcx.jpg' };
+          document.getElementById('theater-my-name').textContent = curMask.name;
+          document.getElementById('theater-my-avatar').src = curMask.avatar;
+        }
+      };
+    });
+
     // --- 全局金融联动函数 (供 Chat、App Store 调用) ---
     // 用法例子: window.handleBankUpdate("App Store 购买", -68.00, "shopping-bag")
     window.handleBankUpdate = function(name, amount, iconName = 'circle-dollar-sign') {
@@ -3328,6 +3694,7 @@ let currentStickerGroupId = ""; // 管理界面当前选中组
             masks, chars, npcs, accountData, offlineScenes, sceneHistories, 
             currentOfflineSceneId, isSceneAnchored, currentEncounterNpcs,
             mapData, userLocation,
+            theaterHistory,
             momentsCoverImg: document.getElementById('moments-cover-img') ? document.getElementById('moments-cover-img').src : "",
             playlist, currentTrackIndex, userPlaylists,
             apiPresets, minimaxSettings, currentPresetId, worldBook, stickerGroups,
@@ -3380,6 +3747,7 @@ let currentStickerGroupId = ""; // 管理界面当前选中组
         darkroomData = saveData.darkroomData;
         applyDarkroomData(); // 读档后立即刷新美化效果
       }
+      if (saveData.theaterHistory) theaterHistory = saveData.theaterHistory;
       if (saveData.worldBook) worldBook = saveData.worldBook;
       if (saveData.stickerGroups) stickerGroups = saveData.stickerGroups;
       if (saveData.userAssets !== undefined) userAssets = saveData.userAssets;
@@ -4247,6 +4615,230 @@ let currentStickerGroupId = ""; // 管理界面当前选中组
       if (role) {
         openRoleNotes(role); // 复用原有的记事弹窗函数
       }
+    };
+    // --- 剧场演出逻辑 ---
+    // 1. 画廊折叠开关动画
+    document.getElementById('btn-toggle-theater-gallery').onclick = () => {
+      const list = document.getElementById('theater-gallery-list');
+      const arrow = document.getElementById('theater-gallery-arrow');
+      list.classList.toggle('hidden');
+      if (list.classList.contains('hidden')) {
+        arrow.style.transform = 'rotate(0deg)';
+      } else {
+        arrow.style.transform = 'rotate(180deg)';
+        renderTheaterGallery(); // 修复：展开时立即渲染一遍最新数据
+      }
+    };
+
+    // 2. 中场休息停止按钮
+    document.getElementById('btn-theater-pause').onclick = () => {
+      document.getElementById('theater-stage-view').classList.add('hidden');
+      alert("已中场休息！你可以暂时离开。稍后点击【筹划新作】可选择继续该剧目。");
+    };
+
+    // 3. 点击大十字（如果有未完成剧目，允许断线重连）
+    document.getElementById('btn-open-theater-setup').onclick = () => {
+      if (currentProduction) {
+        if (confirm(`你当前有一场未谢幕的剧目《${currentProduction.title}》正在进行中。\n是否要回到舞台继续演出？\n(点击“取消”将放弃并清空该剧，重新排练新戏)`)) {
+           document.getElementById('theater-stage-view').classList.remove('hidden');
+           return; // 直接返回舞台，终止下方清空数据
+        } else {
+           currentProduction = null; // 用户选择了重新排练，清空上一个舞台
+        }
+      }
+
+      document.getElementById('setup-theater-title').value = '';
+      document.getElementById('setup-theater-background').value = '';
+      renderTheaterCastList();
+      document.getElementById('theater-setup-modal').classList.remove('hidden');
+    };
+
+    document.getElementById('btn-cancel-theater-setup').onclick = () => {
+      document.getElementById('theater-setup-modal').classList.add('hidden');
+    };
+
+    function renderTheaterCastList() {
+      const container = document.getElementById('setup-theater-cast-list');
+      const acc = getCurAcc();
+      container.innerHTML = acc.contacts.length ? '' : '<p class="text-[10px] opacity-40 text-center py-2">暂无联系人</p>';
+      acc.contacts.forEach(c => {
+        container.insertAdjacentHTML('beforeend', `<label class="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors group"><div class="flex items-center gap-3"><img src="${c.avatar}" class="w-8 h-8 rounded-full object-cover border border-white/10" /><span class="text-xs font-bold text-white/80 group-hover:text-white">${c.name}</span></div><input type="checkbox" class="theater-cast-checkbox w-4 h-4 accent-[#ffd700]" value="${c.id}" /></label>`);
+      });
+      lucide.createIcons();
+    }
+
+    document.getElementById('btn-start-theater-performance').onclick = async () => {
+      const title = document.getElementById('setup-theater-title').value.trim() || "未命名剧目";
+      const genre = document.getElementById('setup-theater-genre').value;
+      const era = document.getElementById('setup-theater-era').value;
+      const background = document.getElementById('setup-theater-background').value.trim();
+      const partnerIds = Array.from(document.querySelectorAll('.theater-cast-checkbox:checked')).map(cb => cb.value);
+      const partners = partnerIds.map(id => [...chars, ...npcs].find(r => r.id === id)).filter(Boolean);
+
+      currentProduction = { title, genre, era, background, partners, startTime: Date.now() };
+      stageMessages = []; userStageWords = 0; stageSeconds = 0;
+
+      document.getElementById('stage-play-title').textContent = title;
+      document.getElementById('stage-genre-badge').textContent = `${era} · ${genre}`;
+      document.getElementById('stage-messages-container').innerHTML = '';
+      document.getElementById('theater-setup-modal').classList.add('hidden');
+      views.theaterStage.classList.remove('hidden');
+
+      startStageTimer();
+      await triggerTheaterAiReply(true);
+    };
+
+    function startStageTimer() {
+      clearInterval(stageTimerInterval);
+      stageTimerInterval = setInterval(() => {
+        stageSeconds++;
+        const h = Math.floor(stageSeconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((stageSeconds % 3600) / 60).toString().padStart(2, '0');
+        const s = (stageSeconds % 60).toString().padStart(2, '0');
+        document.getElementById('stage-timer').textContent = `${h}:${m}:${s}`;
+      }, 1000);
+    }
+
+    // 监听叶子键点击：推进剧情 / 召唤 AI 作为导演回复
+    document.getElementById('btn-stage-leaf').onclick = async (e) => {
+      const btn = e.currentTarget;
+      if (btn.classList.contains('opacity-50')) return;
+      btn.classList.add('opacity-50');
+      // 触发 AI (自己不加新台词，直接推演下一幕)
+      await triggerTheaterAiReply(false);
+      btn.classList.remove('opacity-50');
+    };
+
+    // 修改发送台词逻辑：按回车只上屏文字，不再自动召唤 AI
+    async function sendStageLine() {
+      const input = document.getElementById('stage-input');
+      const text = input.value.trim();
+      if (!text || !currentProduction) return;
+      const curMask = masks.find(m => m.id === currentMaskId) || { name: '我' };
+      appendStageMessage(curMask.name, text, true);
+      userStageWords += text.replace(/\(.*?\)/g, "").length; // 统计片酬用
+      input.value = '';
+    }
+
+    // 绑定回车键事件
+    document.getElementById('stage-input').onkeydown = (e) => { 
+      if (e.key === 'Enter' && !e.shiftKey) { 
+        e.preventDefault(); 
+        sendStageLine(); 
+      } 
+    };
+
+    function appendStageMessage(name, text, isMe) {
+      const container = document.getElementById('stage-messages-container');
+      const div = document.createElement('div');
+      div.className = "flex flex-col gap-2 anim-slide-up";
+      const cleanText = text.replace(/\((.*?)\)/g, ' <span class="italic opacity-60 ml-1">($1)</span> ');
+      div.innerHTML = `<div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}"><span class="text-[10px] font-black text-[#ffd700] uppercase tracking-widest mb-1">【 ${name} 】</span><div class="text-sm leading-relaxed text-white/90 max-w-[90%] ${isMe ? 'text-right' : 'text-left'}">${cleanText}</div></div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      stageMessages.push({ role: isMe ? 'user' : 'assistant', content: `【${name}】: ${text}` });
+    }
+
+    async function triggerTheaterAiReply(isOpening) {
+      if(!currentProduction) return;
+      const curMask = masks.find(m => m.id === currentMaskId) || { name: '我', gender: '未知', details: '普通人' };
+      const pInfo = currentProduction.partners.map(p => `- ${p.name} (设定:${p.details})`).join('\n');
+      let systemPrompt = `你现在是一位天才导演。正在创作《${currentProduction.title}》。背景：${currentProduction.era}，类型：${currentProduction.genre}。${currentProduction.background ? `大纲:${currentProduction.background}` : ''}\n主角：${curMask.name}。\n联合主演：\n${pInfo || '（扮演环境旁白）'}\n【剧本模式】：1.格式必须模仿剧本，以 【角色名】: 开头。2.括注动作。3.严禁替玩家说台词。\n任务：${isOpening ? '写一段开场白引导入戏。' : '续写剧本。'}`;
+      try {
+        const reply = await callLLM(systemPrompt, stageMessages.slice(-20));
+        const dialogRegex = /【(.*?)】[:：]\s*([\s\S]*?)(?=(【|$))/g;
+        let match, found = false;
+        while ((match = dialogRegex.exec(reply)) !== null) { found = true; appendStageMessage(match[1].trim(), match[2].trim(), false); }
+        if (!found) appendStageMessage(currentProduction.partners.length ? currentProduction.partners[0].name : "旁白", reply, false);
+      } catch (e) { alert("信号中断..." + e.message); }
+    }
+
+    document.getElementById('btn-theater-curtain-call').onclick = () => {
+      if (!confirm("主角谢幕，结算片酬吗？")) return;
+      clearInterval(stageTimerInterval);
+      const totalSalary = 100 + Math.floor(userStageWords * 0.1) + (currentProduction.partners.length * 20);
+      const h = Math.floor(stageSeconds / 3600), m = Math.floor((stageSeconds % 3600) / 60);
+      const durationStr = `${h > 0 ? h + 'h ' : ''}${m}m`;
+      document.getElementById('settle-play-title').textContent = currentProduction.title;
+      document.getElementById('settle-duration').textContent = durationStr;
+      document.getElementById('settle-words').textContent = userStageWords;
+      document.getElementById('settle-amount').textContent = `¥${totalSalary.toFixed(2)}`;
+      theaterHistory.push({ 
+        id: 'play-' + Date.now(), // 给作品生成唯一编号
+        title: currentProduction.title, 
+        date: new Date().toLocaleDateString(), 
+        salary: totalSalary.toFixed(2), 
+        words: userStageWords, 
+        duration: durationStr, 
+        partners: currentProduction.partners.map(p => ({name: p.name, avatar: p.avatar})),
+        messages: JSON.parse(JSON.stringify(stageMessages)) // 将刚才在舞台演出的所有对白完整封存存档
+      });
+      document.getElementById('theater-settlement-modal').classList.remove('hidden');
+    };
+
+    document.getElementById('btn-collect-salary').onclick = () => {
+      const amount = parseFloat(document.getElementById('settle-amount').textContent.replace('¥', ''));
+      if (typeof window.handleBankUpdate === 'function') window.handleBankUpdate(`演出《${currentProduction.title}》片酬`, amount, 'award');
+      document.getElementById('theater-settlement-modal').classList.add('hidden');
+      views.theaterStage.classList.add('hidden');
+      currentProduction = null;
+      renderTheaterGallery();
+      showView('theater');
+    };
+
+    function renderTheaterGallery() {
+      const container = document.getElementById('theater-gallery-list');
+      container.innerHTML = theaterHistory.length ? '' : '<p class="text-center text-[10px] opacity-20 py-10 italic">尚未有谢幕记录...</p>';
+      theaterHistory.slice().reverse().forEach(item => {
+        // 给没有 ID 的旧存档动态补一个，防止旧数据报错
+        const safeId = item.id || ('play-' + Date.now() + Math.random());
+        
+        container.insertAdjacentHTML('beforeend', `<div class="p-4 rounded-xl bg-gradient-to-r from-zinc-900 to-black border border-white/5 shadow-xl relative overflow-hidden group"><div class="absolute -right-2 -bottom-2 opacity-5 scale-150 rotate-12 group-hover:rotate-0 transition-transform duration-700"><i data-lucide="clapperboard" class="w-20 h-20 text-white"></i></div><div class="flex justify-between items-start mb-2"><span class="text-[10px] text-pink-500 font-bold tracking-widest uppercase">Production</span><span class="text-[9px] text-white/20">${item.date}</span></div><h3 class="text-white font-black text-sm tracking-wide mb-3">《${item.title}》</h3><div class="flex items-center gap-3 mb-4">${item.partners.map(p => `<img src="${p.avatar}" class="w-6 h-6 rounded-full border border-white/20" title="${p.name}" />`).join('')}<span class="text-[8px] text-white/40 italic">${item.partners.length ? '等联合主演' : '独角戏'}</span></div><div class="flex justify-between items-center border-t border-white/5 pt-3 mb-3"><span class="text-[10px] text-[#ffd700] font-bold tracking-tighter">¥ ${item.salary}</span><span class="text-[8px] opacity-30">${item.words} 字 / ${item.duration}</span></div>
+        <div class="flex gap-2 relative z-10 w-full">
+           <button class="flex-1 py-1.5 bg-white/10 text-white/60 hover:text-[#ffd700] hover:bg-white/20 transition-colors border border-white/5 rounded text-[10px] font-bold tracking-widest" onclick="window.reviewTheaterRecord('${safeId}')">回顾剧本</button>
+           <button class="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/30 rounded text-[10px] transition-colors" onclick="window.deleteTheaterRecord('${safeId}')" title="删除"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+        </div></div>`);
+      });
+      lucide.createIcons();
+    }
+
+    // 全局绑定：审查过去发生的回顾逻辑
+    window.reviewTheaterRecord = function(id) {
+       const record = theaterHistory.find(h => h.id === id);
+       if (!record || !record.messages) return alert("这场剧目在旧时代拍摄，遗憾的是剧本已被岁月侵蚀，没有保留对白记录...");
+       
+       document.getElementById('review-play-title').textContent = `《${record.title}》`;
+       const container = document.getElementById('review-messages-container');
+       container.innerHTML = '';
+       
+       record.messages.forEach(msg => {
+          const div = document.createElement('div');
+          div.className = "flex flex-col gap-2";
+          
+          // 从当初传给大模型的原始阵列中，把【姓名】和台词剥离出来展示
+          const match = msg.content.match(/^【(.*?)】[:：]\s*([\s\S]*)$/);
+          let name = "未知";
+          let text = msg.content;
+          if (match) { name = match[1]; text = match[2]; }
+          
+          const cleanText = text.replace(/\((.*?)\)/g, ' <span class="italic text-white/40 ml-1">($1)</span> ');
+          div.innerHTML = `<div class="flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}"><span class="text-[10px] font-black text-[#ffd700] uppercase tracking-widest mb-1">【 ${name} 】</span><div class="text-sm leading-relaxed text-white/90 max-w-[90%] ${msg.role === 'user' ? 'text-right' : 'text-left'}">${cleanText}</div></div>`;
+          container.appendChild(div);
+       });
+       document.getElementById('theater-review-modal').classList.remove('hidden');
+    };
+
+    // 全局绑定：删除剧目数据，并在后台归档
+    window.deleteTheaterRecord = function(id) {
+       if (confirm('确定要销毁这场珍贵的演出胶片吗？')) {
+          theaterHistory = theaterHistory.filter(h => h.id !== id);
+          renderTheaterGallery(); // 自动刷新列表以去除被删卡片
+          
+          // 如果存档系统不忙，顺手记录一下这笔操作
+          if (typeof db !== 'undefined' && !isResetting) {
+            saveArchive({ id: 'auto-save', name: '自动存档', time: new Date().toLocaleString('zh-CN'), data: getCurrentSaveData() });
+          }
+       }
     };
 
     // --- 档案室逻辑 ---
