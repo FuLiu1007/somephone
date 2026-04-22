@@ -620,6 +620,18 @@
         </div>
       </section>
 
+      <!-- 气泡模糊度修改 -->
+      <section class="bg-white/5 p-4 rounded-[2rem] border border-white/10">
+        <h2 class="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><i data-lucide="sliders" class="w-3 h-3"></i> Bubble Blur / 气泡背景虚化</h2>
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-end mb-1">
+            <span class="text-xs text-white/60">调节气泡模糊程度</span>
+            <span id="blur-value-display" class="text-[10px] font-mono text-blue-400 font-bold">10px</span>
+          </div>
+          <input type="range" id="input-bubble-blur" min="0" max="30" step="1" value="10" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white" />
+        </div>
+      </section>
+
       <!-- 气泡 CSS 修改 -->
       <section class="bg-white/5 p-4 rounded-[2rem] border border-white/10">
         <h2 class="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><i data-lucide="code" class="w-3 h-3"></i> Bubble CSS / 气泡样式代码</h2>
@@ -659,7 +671,10 @@
   <div id="settings-view" class="absolute inset-0 z-20 glass flex flex-col hidden">
     <div class="pt-12 px-4 flex items-center">
       <button id="btn-close-settings" class="p-2 app-icon rounded-full bg-white/10 border border-white/20"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
-      <h1 class="flex-1 text-center font-semibold text-lg mr-10">设置</h1>
+      <div class="flex-1 flex flex-col items-center mr-10">
+        <h1 class="font-semibold text-lg">设置</h1>
+        <span id="app-version-display" class="text-[10px] opacity-40 uppercase tracking-widest font-mono">v1.1</span>
+      </div>
     </div>
     <div class="flex-1 px-6 mt-8 flex flex-col gap-4 overflow-y-auto pb-32">
       <button id="btn-save-data" class="w-full p-5 rounded-2xl bg-white/10 border border-white/10 flex items-center gap-4 app-icon text-left">
@@ -2832,6 +2847,40 @@
   </div>
   </div> <!-- 结束：游戏横屏容器 -->
   <script>
+    // --- 【关键】版本号声明与热更新检查 ---
+    // 以后每次上传新代码，务必在这里改一下数字！比如改成 "1.2"、"v2.0" 都可以。
+    const APP_CURRENT_VERSION = "1.1"; 
+
+    // 在页面加载完成时触发静默检查
+    window.addEventListener('DOMContentLoaded', () => {
+      // 同步顶部显示的版本号
+      const versionDisplay = document.getElementById('app-version-display');
+      if (versionDisplay) versionDisplay.textContent = 'v' + APP_CURRENT_VERSION;
+
+      // 静默探测逻辑 (在后台偷偷向你自己的网站发请求，并绕过缓存)
+      setTimeout(() => {
+        // 这里我们请求当前页面自身，利用时间戳强制不使用缓存
+        fetch(window.location.href.split('?')[0] + '?t=' + new Date().getTime(), { method: 'GET', cache: 'no-store' })
+          .then(res => res.text())
+          .then(html => {
+            // 利用正则去网上抓取最新的 APP_CURRENT_VERSION 变了没有
+            const match = html.match(/const\s+APP_CURRENT_VERSION\s*=\s*['"](.*?)['"]/);
+            if (match && match[1]) {
+              const onlineVersion = match[1];
+              // 核心判断：如果你手机代码是 1.1，但网上已经是 1.2了
+              if (onlineVersion !== APP_CURRENT_VERSION) {
+                if (confirm(`系统检测到新版本 (v${onlineVersion})！\n为保证你的对话协议正常生效，请点击【确定】进行强力刷新。`)) {
+                   // 用户点确定，清理重载指令
+                   window.location.reload(true);
+                }
+              }
+            }
+          }).catch(err => {
+             console.log("版本检测静默失败，不打扰用户");
+          });
+      }, 1500); // 延迟 1.5 秒再查，不影响开启应用的速度
+    });
+
     // --- 库定义 ---
     const npcGenerationLibrary = {
       surnames: ["赵", "钱", "孙", "李", "周", "吴", "郑", "王", "冯", "陈", "褚", "卫", "蒋", "沈", "韩", "杨", "朱", "秦", "尤", "许", "何", "吕", "施", "张", "孔", "曹", "严", "华", "金", "魏", "陶", "姜", "戚", "谢", "邹", "喻", "柏", "水", "窦", "章", "云", "苏", "潘", "葛", "奚", "范", "彭", "郎", "鲁", "韦", "昌", "马", "苗", "凤", "花", "方", "俞", "任", "袁", "柳", "酆", "鲍", "史", "唐", "费", "廉", "岑", "薛", "雷", "贺", "倪", "汤", "滕", "殷", "罗", "毕", "郝", "邵", "常", "康", "伍", "余", "元", "卜", "顾", "孟", "平", "黄", "穆", "萧", "尹", "姚", "邵", "湛", "汪", "祁", "毛", "禹", "狄", "臧", "成", "戴", "谈", "宋", "茅", "熊", "纪", "舒", "屈", "项", "祝", "董", "梁", "杜", "阮", "蓝", "闵", "席", "季", "贾", "路", "娄", "江", "童", "颜", "郭", "梅", "盛", "林", "刁", "钟", "徐", "邱", "骆", "高", "夏", "蔡", "田", "樊", "胡", "凌", "霍", "虞", "万", "支", "柯", "卢", "莫", "房", "解", "应", "丁", "宣", "邓", "郁", "单", "洪", "崔", "龚", "程", "嵇", "邢", "裴", "陆", "荣", "甄", "靳", "段", "焦", "牧", "隗", "宁", "刘", "景", "叶", "司", "黎", "池", "乔", "翟", "谭", "姬", "申", "燕", "温", "柴", "瞿", "慕", "", "习", "易", "庾", "辛", "上", "官", "欧阳", "夏侯", "诸葛", "闻人", "东方"],
@@ -3010,7 +3059,8 @@ let currentStickerGroupId = ""; // 管理界面当前选中组
       wallpaper: 'https://iili.io/BoXEHcx.jpg',
       bubbleCss: '',
       globalChatBg: '',
-      contactChatBgs: {} // 格式 { "角色ID": "背景图片" }
+      contactChatBgs: {}, 
+      bubbleBlur: 10 // 重做：改为控制气泡的毛玻璃模糊度，默认 10px
     };
 
     let gameSettings = {
@@ -6438,7 +6488,8 @@ ${physicalProtocol}
 
       prompt += `\n【系统底层协议】:
 1. 保持自然感，禁止列表排版，禁止复读，禁止跳戏。
-2. 自然追问：若用户回复敷衍，请根据性格变换话术追问，【绝对禁止】复读上一轮的句子。\n`;
+2. 微信断句红线（防长文机制）：由于你们是在使用“微信”网聊，单条消息【绝对禁止】发送长篇大论！如果你想说的话超过25个字，或者想表达多个意思，【必须】使用 [换气] 标签将其切碎为多条短消息。例如：“我很想你[换气]你今天过得怎么样？[换气]快点理我！”。这会在底层化为连续发送的短气泡，极度增加真实感。
+3. 自然追问：若用户回复敷衍，请根据性格变换话术追问，【绝对禁止】复读上一轮的句子。\n`;
 
       // 注入世界书
       let worldBookContext = "";
@@ -6511,10 +6562,10 @@ ${physicalProtocol}
 
       // 格式指令
       if (isGroup) {
-        prompt += `\n【群聊模式】：纯线上交流，严禁描写动作，禁止加名字前缀。`;
+        prompt += `\n【群聊模式】：纯线上交流，严禁描写动作，禁止加名字前缀。\n- 群聊纪律：同样必须严格遵守上方提到的 [换气] 拆分规则，多发短碎消息，绝不发长文。`;
       } else {
         prompt += `\n【单聊模式】：
-- 气泡规则：长句请使用 [换气] 标签拆分。
+- 聊天呼吸感（生死红线）：任何情况下，绝不要忘了系统底层的 [换气] 切碎规则！坚决杜绝发百字小作文，越像现实中的短碎讯息越好！
 - 行为标签（言出必行）：
   1. 如果你在话语中决定【立刻去见用户】，必须在回复末尾加上 [去找你: 场景名] 标签。这会立即触发系统突发事件弹窗。
   2. 如果你在话语中决定【立刻给用户拨打语音电话】，必须在回复末尾加上 [拨打电话] 标签。这会立即让用户的手机响起。
@@ -11663,6 +11714,7 @@ async function checkAutoMoments() {
 2. 绝对禁止表现得仿佛你们相隔两地。
 3. 请直接输出微信消息内容，不要带动作描写或前缀。
 4. 语气要自然，像是在这种特殊情境下的私密互动。
+5. 【字数红线】：主动发消息最多只准说两句话，控制在20个字以内，符合随手打字的感觉！绝对不写长文！
 
 最近记录：
 ${recentHistory || '暂无记录'}`;
@@ -11809,7 +11861,8 @@ ${selfTalkHint}
 1. 语言要琐碎、口语化，像真实的社交。
 2. 严禁描写身体动作，只输出文字。
 3. 严禁带任何角色名前缀。
-4. 【防加戏铁律】：绝对禁止凭空捏造你们共同的未来计划（如“明天的局”、“等会去哪里”），也绝对禁止凭空虚构任何没有在上下文出现过的“第三人”（如“老王”、“我妈”、“店员”）。你的话题只能围绕你自己当前的琐事、情绪，或者顺着之前的历史记录往下聊。
+4. 【字数红线】：主动留言最多只准说两句话，总字数严格控制在20个字以内，绝不允许写成大段长文！
+5. 【防加戏铁律】：绝对禁止凭空捏造你们共同的未来计划（如“明天的局”、“等会去哪里”），也绝对禁止凭空虚构任何没有在上下文出现过的“第三人”（如“老王”、“我妈”、“店员”）。你的话题只能围绕你自己当前的琐事、情绪，或者顺着之前的历史记录往下聊。
 最近记录：\n${recentHistory || '暂无记录'}`;
 
             callLLM(prompt, []).then(replyText => {
@@ -14691,6 +14744,45 @@ refreshChatApp = function() {
       // 应用自定义 CSS
       document.getElementById('custom-bubble-style').textContent = darkroomData.bubbleCss;
       document.getElementById('input-bubble-css').value = darkroomData.bubbleCss;
+
+      // --- 新增：处理滑动条与气泡模糊度 ---
+      if (darkroomData.bubbleBlur === undefined) darkroomData.bubbleBlur = 10; 
+      
+      const blurSlider = document.getElementById('input-bubble-blur');
+      const blurDisplay = document.getElementById('blur-value-display');
+      if (blurSlider && blurDisplay) {
+        blurSlider.value = darkroomData.bubbleBlur;
+        blurDisplay.textContent = darkroomData.bubbleBlur + 'px';
+      }
+
+      // 动态写入 CSS 控制虚化
+      let dynamicStyle = document.getElementById('dynamic-opacity-style');
+      if (!dynamicStyle) {
+        dynamicStyle = document.createElement('style');
+        dynamicStyle.id = 'dynamic-opacity-style';
+        document.head.appendChild(dynamicStyle);
+      }
+
+      // 将气泡固定为非常弱的半透明白底，重点依赖 backdrop-filter: blur 进行虚化
+      dynamicStyle.textContent = `
+        .msg-left, .msg-right { 
+          background: rgba(255,255,255, 0.15) !important; 
+          backdrop-filter: blur(${darkroomData.bubbleBlur}px) !important;
+          -webkit-backdrop-filter: blur(${darkroomData.bubbleBlur}px) !important;
+          color: white !important;
+        }
+        .msg-left::before { border-right-color: rgba(255,255,255, 0.15) !important; }
+        .msg-right::before { border-left-color: rgba(255,255,255, 0.15) !important; }
+      `;
+    }
+
+    // 实时监听模糊度滑动条的拖动
+    const blurSliderEl = document.getElementById('input-bubble-blur');
+    if (blurSliderEl) {
+      blurSliderEl.oninput = (e) => {
+        darkroomData.bubbleBlur = parseInt(e.target.value);
+        applyDarkroomData(); // 拖动时实时改变模糊度
+      };
     }
 
     // 2. 界面切换 (独立修复版)
